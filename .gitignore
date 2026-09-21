@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*.log
+.idea/
+.vscode/
+
+# 本地推理运行库约 1.2 GB，包含超过 GitHub 单文件上限的 CUDA DLL。
+runtime/*
+!runtime/README.md
+
+# 推理模型放在 ComfyUI/models，不进入节点源码仓库。
+models/
+
