@@ -3,8 +3,3 @@ __pycache__/
 *.log
 .idea/
 .vscode/
-
-# 大型推理运行库和模型通过 GitHub Releases 分发，不进入 Git 历史。
-runtime/
-models/
-release-assets/
