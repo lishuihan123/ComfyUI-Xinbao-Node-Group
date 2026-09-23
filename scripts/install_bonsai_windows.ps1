@@ -17,12 +17,9 @@ $downloadDir = Join-Path $env:TEMP "xinbao-bonsai2-v020"
 $baseUrl = "https://github.com/lishuihan123/ComfyUI-Xinbao-Node-Group/releases/download/$ReleaseTag"
 $runtimeBaseUrl = "https://github.com/PrismML-Eng/llama.cpp/releases/download/prism-b10709-9a9394a"
 
-$parts = @(
-    "Ternary-Bonsai-2-27B-PTQ1_0.gguf.part01",
-    "Ternary-Bonsai-2-27B-PTQ1_0.gguf.part02",
-    "Ternary-Bonsai-2-27B-PTQ1_0.gguf.part03",
-    "Ternary-Bonsai-2-27B-PTQ1_0.gguf.part04"
-)
+$parts = 1..23 | ForEach-Object {
+    "Ternary-Bonsai-2-27B-PTQ1_0.gguf.part{0:D2}" -f $_
+}
 $mmprojName = "Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf"
 $runtimeBinaryName = "llama-prism-b10709-9a9394a-bin-win-cuda-12.4-x64.zip"
 $runtimeCudaName = "cudart-llama-bin-win-cuda-12.4-x64.zip"

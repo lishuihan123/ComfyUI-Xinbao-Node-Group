@@ -54,11 +54,11 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install_bonsai_windows.ps1
 
 脚本会下载、合并并校验文件，然后安装到当前 ComfyUI。也可以手动安装：
 
-1. 下载 `Ternary-Bonsai-2-27B-PTQ1_0.gguf.part01` 至 `part04`。
+1. 下载 `Ternary-Bonsai-2-27B-PTQ1_0.gguf.part01` 至 `part23`。
 2. 在这些分卷所在目录打开 CMD，执行：
 
    ```bat
-   copy /b Ternary-Bonsai-2-27B-PTQ1_0.gguf.part01+Ternary-Bonsai-2-27B-PTQ1_0.gguf.part02+Ternary-Bonsai-2-27B-PTQ1_0.gguf.part03+Ternary-Bonsai-2-27B-PTQ1_0.gguf.part04 Ternary-Bonsai-2-27B-PTQ1_0.gguf
+   copy /b Ternary-Bonsai-2-27B-PTQ1_0.gguf.part* Ternary-Bonsai-2-27B-PTQ1_0.gguf
    ```
 
 3. 下载 `Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf`。
