@@ -20,28 +20,46 @@ $runtimeBaseUrl = "https://github.com/PrismML-Eng/llama.cpp/releases/download/pr
 $modelParts = 1..4 | ForEach-Object {
     "Ternary-Bonsai-2-27B-PTQ1_0.gguf.part{0:D2}" -f $_
 }
+$modelPartSizes = @(1887436800L, 1887436800L, 1887436800L, 284338528L)
 $mmprojName = "Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf"
+$mmprojSize = 629246976L
 $runtimeBinaryName = "llama-prism-b10709-9a9394a-bin-win-cuda-12.4-x64.zip"
 $runtimeCudaName = "cudart-llama-bin-win-cuda-12.4-x64.zip"
+$runtimeBinarySize = 253442371L
+$runtimeCudaSize = 391443627L
 
 New-Item -ItemType Directory -Path $modelDir -Force | Out-Null
 New-Item -ItemType Directory -Path $downloadDir -Force | Out-Null
 
-function Get-RemoteFile([string]$url, [string]$name) {
+function Get-RemoteFile([string]$url, [string]$name, [long]$expectedBytes) {
     $target = Join-Path $downloadDir $name
-    if (-not (Test-Path -LiteralPath $target)) {
-        Write-Host "Downloading $name"
-        Invoke-WebRequest -Uri "$url/$name" -OutFile $target
-    } else {
+    if ((Test-Path -LiteralPath $target) -and (Get-Item -LiteralPath $target).Length -eq $expectedBytes) {
         Write-Host "Existing download, skipped: $name"
+        return $target
+    }
+    if ((Test-Path -LiteralPath $target) -and (Get-Item -LiteralPath $target).Length -gt $expectedBytes) {
+        Remove-Item -LiteralPath $target -Force
+    }
+
+    Write-Host "Downloading or resuming $name"
+    & curl.exe --location --fail --retry 20 --retry-all-errors --retry-delay 5 `
+        --continue-at - --output $target "$url/$name"
+    if ($LASTEXITCODE -ne 0) {
+        throw "Download failed: $name"
+    }
+    $actualBytes = (Get-Item -LiteralPath $target).Length
+    if ($actualBytes -ne $expectedBytes) {
+        throw "Download size verification failed for ${name}: $actualBytes != $expectedBytes"
     }
     return $target
 }
 
-$modelPartPaths = foreach ($part in $modelParts) { Get-RemoteFile $baseUrl $part }
-$mmprojDownload = Get-RemoteFile $baseUrl $mmprojName
-$runtimeBinaryDownload = Get-RemoteFile $runtimeBaseUrl $runtimeBinaryName
-$runtimeCudaDownload = Get-RemoteFile $runtimeBaseUrl $runtimeCudaName
+$modelPartPaths = for ($index = 0; $index -lt $modelParts.Count; $index++) {
+    Get-RemoteFile $baseUrl $modelParts[$index] $modelPartSizes[$index]
+}
+$mmprojDownload = Get-RemoteFile $baseUrl $mmprojName $mmprojSize
+$runtimeBinaryDownload = Get-RemoteFile $runtimeBaseUrl $runtimeBinaryName $runtimeBinarySize
+$runtimeCudaDownload = Get-RemoteFile $runtimeBaseUrl $runtimeCudaName $runtimeCudaSize
 
 function Join-ReleaseParts([array]$partPaths, [string]$destination) {
     $output = [IO.File]::Open($destination, [IO.FileMode]::Create, [IO.FileAccess]::Write)
