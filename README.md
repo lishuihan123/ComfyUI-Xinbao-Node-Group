@@ -54,18 +54,18 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install_bonsai_windows.ps1
 
 脚本会下载、合并并校验文件，然后安装到当前 ComfyUI。也可以手动安装：
 
-1. 下载主模型的 `Ternary-Bonsai-2-27B-PTQ1_0.gguf.part001` 至 `part089`，以及视觉模型的 `Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf.part001` 至 `part010`。
-2. 在这些分卷所在目录打开 CMD，分别执行：
+1. 下载主模型的 `Ternary-Bonsai-2-27B-PTQ1_0.gguf.part01` 至 `part04`。
+2. 在这些分卷所在目录打开 CMD，执行：
 
    ```bat
    copy /b Ternary-Bonsai-2-27B-PTQ1_0.gguf.part* Ternary-Bonsai-2-27B-PTQ1_0.gguf
-   copy /b Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf.part* Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf
    ```
 
-3. 从 Prism ML 的 [`prism-b10709-9a9394a`](https://github.com/PrismML-Eng/llama.cpp/releases/tag/prism-b10709-9a9394a) Release 下载以下两个压缩包，并把两者都解压到 `runtime` 目录：
+3. 下载完整的 `Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf`。
+4. 从 Prism ML 的 [`prism-b10709-9a9394a`](https://github.com/PrismML-Eng/llama.cpp/releases/tag/prism-b10709-9a9394a) Release 下载以下两个压缩包，并把两者都解压到 `runtime` 目录：
    - `llama-prism-b10709-9a9394a-bin-win-cuda-12.4-x64.zip`
    - `cudart-llama-bin-win-cuda-12.4-x64.zip`
-4. 按下面的目录放置：
+5. 按下面的目录放置：
 
 ```text
 ComfyUI/
