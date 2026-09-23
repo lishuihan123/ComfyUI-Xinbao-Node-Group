@@ -1,26 +1,102 @@
 # ComfyUI Xinbao Node Group
 
-`ComfyUI-Xinbao-Node-Group` 是心宝自用并长期维护的 ComfyUI 节点组，界面分类统一为 `心宝❤节点组`。
+`ComfyUI-Xinbao-Node-Group` 是心宝自用并长期维护的 ComfyUI 节点集合。以后新增的自定义节点会继续放进这个仓库，ComfyUI 中的分类统一为 `心宝❤节点组`。
 
-## 节点
+## 当前包含的功能
 
-- `心宝❤推理（极速版）`：使用 Ternary Bonsai 2 27B，根据角色定位和用户指令扩写提示词；支持不输入图片、1–10 张图片或视频帧批次，并可输出中文或英文。
-- `心宝❤图片标准化`：根据输入图比例自动选择最接近的 1K/2K 标准尺寸，等比缩放并居中裁切，同时输出 1024 或 2048 的基准值。
-- `心宝❤构图`：交互式图片合成，支持移动、缩放、旋转、描边、画笔、橡皮及遮罩输出。
-- `释放 Bonsai 2 模型`：主动关闭本地推理服务并释放相关显存/内存。
+### 心宝❤推理（极速版）
 
-## 安装
+本地调用 **Ternary Bonsai 2 27B**，将简单想法、参考图片或视频扩写/反推为可用于图像生成的提示词。
 
-1. 将本仓库克隆到 `ComfyUI/custom_nodes/ComfyUI-Xinbao-Node-Group`。
-2. 准备 Windows CUDA 版 llama.cpp 运行库，将 `llama-server.exe` 及它依赖的 DLL 放入本节点的 `runtime` 目录。详见 [runtime/README.md](runtime/README.md)。
-3. 将以下模型放到 `ComfyUI/models/LLM/Bonsai2-27B/`：
-   - `Ternary-Bonsai-2-27B-PTQ1_0.gguf`
-   - `Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf`
-4. 重启 ComfyUI。
+- 可以完全不输入图片，只根据“角色定位”和“用户指令”扩写提示词；
+- 支持 1–10 张独立参考图片；
+- 支持输入视频帧批次，并按设定数量均匀抽帧；
+- 用户指令优先于角色定位，发生冲突时以用户指令为准；
+- 支持中文或英文输出；
+- 可控制最大图片边长、最大输出 token、温度、top_p、种子和上下文大小；
+- 可选择推理后释放模型，或保持模型常驻以便连续运行。
 
-`requirements.txt` 不要求额外 Python 依赖；Pillow、NumPy 与 PyTorch 由 ComfyUI 环境提供。
+### 心宝❤图片标准化
 
-## 说明
+- 自动识别输入图宽高比，并匹配最接近的预设比例；
+- 支持 1K 与 2K 两套标准尺寸；
+- 等比缩放后居中裁切，不拉伸人物或产品；
+- 输出标准化图片、宽度、高度、匹配比例和基准值；
+- 基准值在 1K 模式输出 `1024`，在 2K 模式输出 `2048`。
 
-GitHub 源码仓库不提交本地推理运行库和模型。运行库约 1.2 GB，其中多个 CUDA DLL 超过 GitHub 的普通 Git 单文件限制；完整离线文件保留在心宝整合包中。
+### 心宝❤构图
 
+- 在节点画布内交互式移动、缩放和旋转产品图；
+- 支持外描边、透明度、画笔和橡皮；
+- 最终画布尺寸跟随背景图；
+- 同时输出合成图片与产品遮罩。
+
+### 释放 Bonsai 2 模型
+
+主动关闭本地推理服务，释放 Bonsai 推理占用的显存和内存。
+
+## 安装节点
+
+把仓库克隆到 ComfyUI 的 `custom_nodes` 目录：
+
+```powershell
+cd ComfyUI\custom_nodes
+git clone https://github.com/lishuihan123/ComfyUI-Xinbao-Node-Group.git
+```
+
+重启 ComfyUI 后，不依赖 Bonsai 的 `心宝❤图片标准化` 和 `心宝❤构图` 可以直接使用。`requirements.txt` 不要求额外 Python 包；Pillow、NumPy、PyTorch 和 psutil 由常规 ComfyUI 环境提供。
+
+## 安装推理模型与运行库
+
+只有使用 `心宝❤推理（极速版）` 时才需要以下文件。请在仓库右侧的 **Releases** 中打开 `v0.2.0`，下载全部模型分卷、视觉投影模型和 Windows CUDA 运行库。
+
+推荐在仓库目录中执行一键安装脚本：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\install_bonsai_windows.ps1
+```
+
+脚本会下载、合并并校验文件，然后安装到当前 ComfyUI。也可以手动安装：
+
+1. 下载 `Ternary-Bonsai-2-27B-PTQ1_0.gguf.part01` 至 `part04`。
+2. 在这些分卷所在目录打开 CMD，执行：
+
+   ```bat
+   copy /b Ternary-Bonsai-2-27B-PTQ1_0.gguf.part01+Ternary-Bonsai-2-27B-PTQ1_0.gguf.part02+Ternary-Bonsai-2-27B-PTQ1_0.gguf.part03+Ternary-Bonsai-2-27B-PTQ1_0.gguf.part04 Ternary-Bonsai-2-27B-PTQ1_0.gguf
+   ```
+
+3. 下载 `Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf`。
+4. 下载并解压 `Xinbao-Bonsai2-runtime-win-cuda12.zip`。
+5. 按下面的目录放置：
+
+```text
+ComfyUI/
+├─ custom_nodes/
+│  └─ ComfyUI-Xinbao-Node-Group/
+└─ models/
+   └─ LLM/
+      └─ Bonsai2-27B/
+         ├─ Ternary-Bonsai-2-27B-PTQ1_0.gguf
+         ├─ Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf
+         └─ runtime/
+            ├─ llama-server.exe
+            └─ 其余 DLL 与运行文件
+```
+
+模型和运行库不放在 `custom_nodes` 目录，因此节点源码本身只有几百 KB。节点会依次查找：
+
+1. 环境变量 `XINBAO_BONSAI_RUNTIME` 指向的运行库目录；
+2. `ComfyUI/models/LLM/Bonsai2-27B/runtime/`；
+3. 旧版本使用的节点目录内 `runtime/`。
+
+## 模型来源与授权
+
+- Bonsai 2 27B GGUF：[`prism-ml/Ternary-Bonsai-2-27B-gguf`](https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf)，Apache-2.0；
+- 本项目重新分发的模型文件未作修改，模型版权归原作者 Prism ML；
+- Windows 推理运行库基于 llama.cpp，MIT License。
+
+完整第三方说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+## 更新计划
+
+这是长期维护的统一节点组。后续心宝自用节点会继续加入本仓库，并通过 GitHub Releases 发布需要的大型模型或运行资源。欢迎通过 Issues 反馈问题。

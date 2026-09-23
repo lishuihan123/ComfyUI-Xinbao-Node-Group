@@ -24,12 +24,33 @@ except ImportError:  # allows lightweight import tests outside ComfyUI
 
 
 PLUGIN_DIR = Path(__file__).resolve().parent
-RUNTIME_DIR = PLUGIN_DIR / "runtime"
 DEFAULT_MODEL_DIR = (
     Path(folder_paths.models_dir) / "LLM" / "Bonsai2-27B"
     if folder_paths is not None
     else PLUGIN_DIR / "models"
 )
+
+
+def _resolve_runtime_dir() -> Path:
+    """Locate llama.cpp outside the custom-node folder, with legacy fallback."""
+    candidates = []
+    configured = os.environ.get("XINBAO_BONSAI_RUNTIME")
+    if configured:
+        candidates.append(Path(configured).expanduser())
+    candidates.extend(
+        (
+            DEFAULT_MODEL_DIR / "runtime",
+            PLUGIN_DIR / "runtime",
+        )
+    )
+    for candidate in candidates:
+        if (candidate / "llama-server.exe").is_file():
+            return candidate.resolve()
+    # Point error messages at the preferred location when no runtime exists.
+    return (DEFAULT_MODEL_DIR / "runtime").resolve()
+
+
+RUNTIME_DIR = _resolve_runtime_dir()
 SERVER_PORT = 8199
 
 STANDARD_IMAGE_SIZES = {
