@@ -18,11 +18,7 @@
 
 ### 心宝❤图片标准化
 
-- 自动识别输入图宽高比，并匹配最接近的预设比例；
-- 支持 1K 与 2K 两套标准尺寸；
-- 等比缩放后居中裁切，不拉伸人物或产品；
-- 输出标准化图片、宽度、高度、匹配比例和基准值；
-- 基准值在 1K 模式输出 `1024`，在 2K 模式输出 `2048`。
+为了满足 Qwen-Image 2.1 及众多图像模型的标准尺寸要求，对输入图进行自动标准化处理，减少尺寸和比例不规范造成的画面、构图偏移问题。
 
 ### 心宝❤构图
 
@@ -48,7 +44,7 @@ git clone https://github.com/lishuihan123/ComfyUI-Xinbao-Node-Group.git
 
 ## 安装推理模型与运行库
 
-只有使用 `心宝❤推理（极速版）` 时才需要以下文件。请在仓库右侧的 **Releases** 中打开 `v0.2.0`，下载全部模型分卷、视觉投影模型和 Windows CUDA 运行库。
+只有使用 `心宝❤推理（极速版）` 时才需要以下文件。请在仓库右侧的 **Releases** 中打开 `v0.2.0`，下载全部模型分卷和视觉投影模型。安装脚本还会从 Prism ML 官方 Release 下载与模型匹配的 Windows CUDA 12.4 运行库。
 
 推荐在仓库目录中执行一键安装脚本：
 
@@ -66,7 +62,9 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install_bonsai_windows.ps1
    ```
 
 3. 下载 `Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf`。
-4. 下载并解压 `Xinbao-Bonsai2-runtime-win-cuda12.zip`。
+4. 从 Prism ML 的 [`prism-b10709-9a9394a`](https://github.com/PrismML-Eng/llama.cpp/releases/tag/prism-b10709-9a9394a) Release 下载以下两个压缩包，并把两者都解压到 `runtime` 目录：
+   - `llama-prism-b10709-9a9394a-bin-win-cuda-12.4-x64.zip`
+   - `cudart-llama-bin-win-cuda-12.4-x64.zip`
 5. 按下面的目录放置：
 
 ```text
@@ -93,7 +91,7 @@ ComfyUI/
 
 - Bonsai 2 27B GGUF：[`prism-ml/Ternary-Bonsai-2-27B-gguf`](https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf)，Apache-2.0；
 - 本项目重新分发的模型文件未作修改，模型版权归原作者 Prism ML；
-- Windows 推理运行库基于 llama.cpp，MIT License。
+- Windows 推理运行库来自 Prism ML 官方 llama.cpp fork Release，MIT License。
 
 完整第三方说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 

@@ -19,6 +19,6 @@ Apache License 2.0 text: https://www.apache.org/licenses/LICENSE-2.0
 - Source: https://github.com/ggml-org/llama.cpp
 - License: MIT
 
-The downloadable Windows CUDA runtime contains llama.cpp executables and
-libraries together with their runtime dependencies. Their respective upstream
-licenses and notices continue to apply.
+The Windows installer downloads the matching runtime directly from Prism ML's
+official `prism-b10709-9a9394a` llama.cpp release. Its upstream licenses and
+notices continue to apply.
