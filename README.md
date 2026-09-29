@@ -15,6 +15,23 @@
 - 最终画布尺寸跟随背景图；
 - 同时输出合成图片与产品遮罩。
 
+### 心宝❤深度调节
+
+用于视频复刻流程：调节深度视频的阈值、灰度层级和细节强度，让深度控制视频更适合下游视频生成模型，以获得更好的复刻效果。节点对整批视频帧使用同一组参数，不会因后处理参数逐帧变化而破坏连贯性。
+
+- `low_threshold` / `high_threshold`：选择有效深度范围，低阈值必须小于高阈值；
+- `gamma`：调节中间深度，`1.0` 为原样；
+- `depth_levels`：`256` 最精细，数值越小越粗糙，`2` 为两层剪影；
+- `smoothing`：去除细碎深度，数值越大越平滑；
+- `invert`：反转远近的黑白方向。
+
+推荐预设：
+
+- 精细：`0.02 / 0.98 / 1.0 / 256 / 0`
+- 标准：`0.05 / 0.95 / 1.0 / 64 / 0.5`
+- 粗糙：`0.10 / 0.90 / 1.0 / 12 / 2.0`
+- 两层剪影：`0.45 / 0.55 / 1.0 / 2 / 1.0`
+
 ## 安装节点
 
 把仓库克隆到 ComfyUI 的 `custom_nodes` 目录：
@@ -24,7 +41,7 @@ cd ComfyUI\custom_nodes
 git clone https://github.com/lishuihan123/ComfyUI-Xinbao-Node-Group.git
 ```
 
-重启 ComfyUI 后，`心宝❤图片标准化` 和 `心宝❤构图` 即可使用。`requirements.txt` 不要求额外 Python 包；Pillow、NumPy 和 PyTorch 由常规 ComfyUI 环境提供。
+重启 ComfyUI 后，`心宝❤图片标准化`、`心宝❤构图` 和 `心宝❤深度调节` 即可使用。`requirements.txt` 不要求额外 Python 包；Pillow、NumPy 和 PyTorch 由常规 ComfyUI 环境提供。
 
 `心宝❤推理（极速版）` 已拆分为独立项目：[`ComfyUI-Xinbao-Inference-Fast`](https://github.com/lishuihan123/ComfyUI-Xinbao-Inference-Fast)。需要提示词扩写、图片/视频反推时请单独安装该仓库。
 
