@@ -219,7 +219,7 @@ function setupSelector(node) {
     addSection("扩展光效", EXTRA_LIGHTS, "#f4bf72");
 
     const directionTitle = document.createElement("div");
-    directionTitle.textContent = "光照方向（暂未开放，下版上线）";
+    directionTitle.textContent = "光照方向（即将开发）";
     directionTitle.style.cssText = "margin:14px 0 7px;font-size:12px;font-weight:700;color:#72dcff";
     root.append(directionTitle);
     const directionPanel = document.createElement("div");
