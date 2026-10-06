@@ -24,7 +24,7 @@ LIGHTING_PROMPTS = OrderedDict(
             "lens_flare",
             (
                 "镜头光晕",
-                "加入克制、自然的镜头光晕，不遮挡主体与文字。",
+                "加入克制、自然的镜头光晕。",
             ),
         ),
         (
