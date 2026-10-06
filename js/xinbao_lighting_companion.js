@@ -37,7 +37,7 @@ const DIRECTIONS = [
     ["front", "正前方"], ["back", "正后方"],
 ];
 const DIRECTION_KEYS = new Set(DIRECTIONS.map(([key]) => key));
-const DIRECTION_ENABLED = false;
+const DIRECTION_ENABLED = true;
 const MIN_NODE_WIDTH = 520;
 const MIN_NODE_HEIGHT = 740;
 
@@ -180,6 +180,7 @@ function setupSelector(node) {
         for (const [key, button] of buttons) applyButtonStyle(button, selected.includes(key));
         for (const [key, button] of directionButtons) {
             applyButtonStyle(button, direction === key);
+            if (direction === key) button.style.cssText += ";border-color:#b99be3;background:linear-gradient(180deg,#8b65b5,#624580);box-shadow:0 0 9px rgba(174,130,222,.25)";
             button.disabled = !DIRECTION_ENABLED;
             if (!DIRECTION_ENABLED) button.style.cssText += ";opacity:.45;cursor:not-allowed;box-shadow:none";
         }
@@ -220,8 +221,7 @@ function setupSelector(node) {
 
     const directionTitle = document.createElement("div");
     directionTitle.textContent = "光照方向（即将开发）";
-    directionTitle.style.cssText = "margin:14px 0 7px;font-size:12px;font-weight:700;color:#72dcff";
-    root.append(directionTitle);
+    directionTitle.style.cssText = "margin:16px 0 7px;padding-top:12px;border-top:1px solid #383044;font-size:12px;font-weight:700;color:#c5a5e8";
     const directionPanel = document.createElement("div");
     directionPanel.setAttribute("role", "group");
     directionPanel.setAttribute("aria-label", "光照方向（单选）");
@@ -248,11 +248,9 @@ function setupSelector(node) {
         (key === "front" || key === "back" ? depth : compass).append(button);
     }
     directionPanel.append(compass, depth);
-    root.append(directionPanel);
     const directionHint = document.createElement("div");
-    directionHint.textContent = "当前 LoRA 未专项训练光照方向，暂不可选，不追加方向提示词";
+    directionHint.textContent = "可点击试用，效果尚不稳定；单选，默认不追加方向提示词";
     directionHint.style.cssText = "margin-top:6px;font-size:11px;color:#929db3";
-    root.append(directionHint);
 
     const subjectLabel = document.createElement("label");
     subjectLabel.style.cssText = "display:flex;align-items:center;gap:8px;margin-top:16px;padding:6px 2px;font-size:13px;color:#dbe2f3;cursor:pointer;white-space:nowrap";
@@ -291,6 +289,7 @@ function setupSelector(node) {
     });
     supplementLabel.append(supplementTitle, supplementInput);
     root.append(supplementLabel);
+    root.append(directionTitle, directionPanel, directionHint);
 
     node.__xinbaoLightingRestore = () => {
         const saved = parseSelection(stateWidget.value);
