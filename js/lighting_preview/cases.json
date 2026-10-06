@@ -8,8 +8,8 @@
   {
     "key": "striped_light",
     "title": "条纹光",
-    "before": "images/original_portrait.webp",
-    "after": "images/striped_light.webp"
+    "before": "images/striped_light_original.png",
+    "after": "images/striped_light_effect.png"
   },
   {
     "key": "lens_flare",
