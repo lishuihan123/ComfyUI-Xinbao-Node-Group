@@ -141,6 +141,7 @@ SUBJECT_PROMPT = "光影必须明确作用于人物或产品主体表面，形�
 SUBJECT_LIGHTS = {"tree_shadow", "striped_light"}
 
 # Directions describe the source position as seen by the camera, not shadow travel.
+DIRECTION_ENABLED = False
 DIRECTION_SOURCES = {
     "top_left": "从画面左上方斜向照向主体，使主体朝向左上方的表面受光，背光面形成自然阴影",
     "top": "从主体正上方向下照射，使主体顶部受光，下方及被遮挡部位形成自然阴影",
@@ -157,6 +158,8 @@ DIRECTION_SUFFIX = "以相机看到的画面为方向参照，将所选光效的
 
 
 def _direction_prompt(direction):
+    if not DIRECTION_ENABLED:
+        return ""
     source = DIRECTION_SOURCES.get(direction) if isinstance(direction, str) else None
     return "修改光线方向为" + source + "；" + DIRECTION_SUFFIX if source else ""
 

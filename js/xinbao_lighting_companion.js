@@ -37,6 +37,7 @@ const DIRECTIONS = [
     ["front", "正前方"], ["back", "正后方"],
 ];
 const DIRECTION_KEYS = new Set(DIRECTIONS.map(([key]) => key));
+const DIRECTION_ENABLED = false;
 const MIN_NODE_WIDTH = 520;
 const MIN_NODE_HEIGHT = 740;
 
@@ -72,6 +73,7 @@ function parseSupplement(raw) {
 }
 
 function parseDirection(raw) {
+    if (!DIRECTION_ENABLED) return "default";
     try {
         const direction = JSON.parse(raw || "[]")?.direction;
         return DIRECTION_KEYS.has(direction) ? direction : "default";
@@ -178,6 +180,8 @@ function setupSelector(node) {
         for (const [key, button] of buttons) applyButtonStyle(button, selected.includes(key));
         for (const [key, button] of directionButtons) {
             applyButtonStyle(button, direction === key);
+            button.disabled = !DIRECTION_ENABLED;
+            if (!DIRECTION_ENABLED) button.style.cssText += ";opacity:.45;cursor:not-allowed;box-shadow:none";
         }
         subjectCheckbox.checked = subjectEnabled;
         node.graph?.setDirtyCanvas(true, true);
@@ -215,7 +219,7 @@ function setupSelector(node) {
     addSection("扩展光效", EXTRA_LIGHTS, "#f4bf72");
 
     const directionTitle = document.createElement("div");
-    directionTitle.textContent = "光照方向（下版正式上线）";
+    directionTitle.textContent = "光照方向（暂未开放，下版上线）";
     directionTitle.style.cssText = "margin:14px 0 7px;font-size:12px;font-weight:700;color:#72dcff";
     root.append(directionTitle);
     const directionPanel = document.createElement("div");
@@ -231,11 +235,12 @@ function setupSelector(node) {
         button.type = "button";
         button.textContent = title;
         button.dataset.directionKey = key;
-        button.title = key === "default" ? "不追加方向提示词" : `光源来自${title}，以相机画面为参照`;
+        button.title = !DIRECTION_ENABLED ? "当前版本暂未开放，不输出方向提示词" : key === "default" ? "不追加方向提示词" : `光源来自${title}，以相机画面为参照`;
         button.addEventListener("pointerdown", event => event.stopPropagation());
         button.addEventListener("click", event => {
             event.preventDefault();
             event.stopPropagation();
+            if (!DIRECTION_ENABLED) return;
             direction = key;
             sync();
         });
@@ -245,7 +250,7 @@ function setupSelector(node) {
     directionPanel.append(compass, depth);
     root.append(directionPanel);
     const directionHint = document.createElement("div");
-    directionHint.textContent = "按画面视角选择光源方位；默认不追加方向提示词";
+    directionHint.textContent = "当前 LoRA 未专项训练光照方向，暂不可选，不追加方向提示词";
     directionHint.style.cssText = "margin-top:6px;font-size:11px;color:#929db3";
     root.append(directionHint);
 
