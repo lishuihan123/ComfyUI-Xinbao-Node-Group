@@ -14,8 +14,8 @@
   {
     "key": "lens_flare",
     "title": "镜头光晕",
-    "before": "images/original_portrait.webp",
-    "after": "images/lens_flare.webp"
+    "before": "images/lens_flare_original.png",
+    "after": "images/lens_flare_effect.png"
   },
   {
     "key": "transparent_caustics",
