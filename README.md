@@ -32,6 +32,10 @@
 - 粗糙：`0.10 / 0.90 / 1.0 / 12 / 2.0`
 - 两层剪影：`0.45 / 0.55 / 1.0 / 2 / 1.0`
 
+### 心宝❤打光搭档
+
+搭配心宝全能打光 LoRA 使用，选择光效更加方便。支持同时选择多个光效，并将完整提示词合并为一个文本输出。
+
 ## 安装节点
 
 把仓库克隆到 ComfyUI 的 `custom_nodes` 目录：
@@ -41,7 +45,7 @@ cd ComfyUI\custom_nodes
 git clone https://github.com/lishuihan123/ComfyUI-Xinbao-Node-Group.git
 ```
 
-重启 ComfyUI 后，`心宝❤图片标准化`、`心宝❤构图` 和 `心宝❤深度调节` 即可使用。`requirements.txt` 不要求额外 Python 包；Pillow、NumPy 和 PyTorch 由常规 ComfyUI 环境提供。
+重启 ComfyUI 后，`心宝❤图片标准化`、`心宝❤构图`、`心宝❤深度调节` 和 `心宝❤打光搭档` 即可使用。`requirements.txt` 不要求额外 Python 包；Pillow、NumPy 和 PyTorch 由常规 ComfyUI 环境提供。
 
 `心宝❤推理（极速版）` 已拆分为独立项目：[`ComfyUI-Xinbao-Inference-Fast`](https://github.com/lishuihan123/ComfyUI-Xinbao-Inference-Fast)。需要提示词扩写、图片/视频反推时请单独安装该仓库。
 
