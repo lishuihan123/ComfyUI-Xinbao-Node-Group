@@ -25,7 +25,7 @@ const EXTRA_LIGHTS = [
     ["water_ripple", "水波光影", "加入明显而自然的水波光影，让流动的波纹光投射在主体与场景表面，只添加光影，不新增水面、泳池或其他物体。"],
     ["color_projection", "彩色投影", "加入明显的彩色投影光影，使抽象色彩和渐变光线自然投射在主体与背景上，只改变光线，不新增投影设备或文字图案。"],
     ["hard_light_cut", "硬光切割", "加入方向明确的硬光，使主体和场景出现清晰的明暗切割与锐利阴影边缘，保持真实的光线方向和空间关系。"],
-    ["studio_softbox", "棚拍柔光", "转换为干净自然的商业棚拍柔光，均匀照亮主体，保留柔和阴影、材质纹理和立体感，避免过曝和塑料感。"],
+    ["studio_softbox", "棱晶虹光", "加入强烈、清晰的棱晶虹光：高强度白光经过画外透明棱晶的折射与色散，在人物或产品主体及周围环境表面形成错落交叠的彩色光带、半透明亮区和接近白色的高亮核心；光谱以青蓝、紫罗兰、橙金为主，光带边缘分离出鲜明色彩。光带随主体轮廓、曲面、材质和遮挡关系自然弯折或中断，暗部保持深邃，形成璀璨而具有空间层次的棱晶折射效果；避免彩虹色均匀铺满画面。只添加折射光影，不新增可见棱晶、灯具或其他物体，保持原图内容不变。"],
 ];
 
 const ALL_LIGHTS = [...TRAINED_LIGHTS, ...EXTRA_LIGHTS];
@@ -143,7 +143,26 @@ function setupSelector(node) {
         event.preventDefault();
         event.stopPropagation();
         const url = new URL("./lighting_preview/index.html", import.meta.url);
-        window.open(url.href, "xinbao-lighting-preview", "popup,width=1080,height=820,resizable=yes,scrollbars=yes");
+        const popupWidth = Math.min(1080, window.screen?.availWidth || 1080);
+        const popupHeight = Math.min(820, window.screen?.availHeight || 820);
+        const currentLeft = window.screenLeft ?? window.screenX ?? 0;
+        const currentTop = window.screenTop ?? window.screenY ?? 0;
+        const currentWidth = window.outerWidth || document.documentElement.clientWidth || popupWidth;
+        const currentHeight = window.outerHeight || document.documentElement.clientHeight || popupHeight;
+        const left = Math.round(currentLeft + (currentWidth - popupWidth) / 2);
+        const top = Math.round(currentTop + (currentHeight - popupHeight) / 2);
+        const previewWindow = window.open(
+            url.href,
+            "xinbao-lighting-preview",
+            `popup,width=${popupWidth},height=${popupHeight},left=${left},top=${top},resizable=yes,scrollbars=yes`,
+        );
+        try {
+            previewWindow?.moveTo(left, top);
+            previewWindow?.resizeTo(popupWidth, popupHeight);
+            previewWindow?.focus();
+        } catch {
+            // Some browsers apply the requested position but block explicit movement.
+        }
     });
     actions.append(previewButton, clear);
     top.append(hint, actions);
@@ -231,7 +250,7 @@ function setupSelector(node) {
     const directionHeader = document.createElement("div");
     directionHeader.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:8px;margin:16px 0 7px;padding-top:12px;border-top:1px solid #383044";
     const directionTitle = document.createElement("div");
-    directionTitle.textContent = "光照方向（即将开放）";
+    directionTitle.textContent = "光照方向（开发中，有待完善）";
     directionTitle.style.cssText = "font-size:12px;font-weight:700;color:#c5a5e8";
     const directionToggle = document.createElement("button");
     directionToggle.type = "button";

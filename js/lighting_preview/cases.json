@@ -38,38 +38,38 @@
   {
     "key": "rim_light",
     "title": "轮廓光",
-    "before": "images/original_portrait.webp",
-    "after": "images/rim_light.webp"
+    "before": "images/rim_light_original.png",
+    "after": "images/rim_light_effect.png"
   },
   {
     "key": "sunset_gold",
     "title": "日落金光",
-    "before": "images/original_portrait.webp",
-    "after": "images/sunset_gold.webp"
+    "before": "images/sunset_gold_original.png",
+    "after": "images/sunset_gold_effect.png"
   },
   {
     "key": "warm_cool_dual",
     "title": "冷暖双色",
-    "before": "images/original_portrait.webp",
-    "after": "images/warm_cool_dual.webp"
+    "before": "images/warm_cool_dual_original.png",
+    "after": "images/warm_cool_dual_effect.png"
   },
   {
     "key": "neon_dual",
     "title": "霓虹双色",
-    "before": "images/original_portrait.webp",
-    "after": "images/neon_dual.webp"
+    "before": "images/neon_dual_original.png",
+    "after": "images/neon_dual_effect.png"
   },
   {
     "key": "dramatic_spotlight",
     "title": "戏剧聚光",
-    "before": "images/original_portrait.webp",
-    "after": "images/dramatic_spotlight.webp"
+    "before": "images/dramatic_spotlight_original.png",
+    "after": "images/dramatic_spotlight_effect.png"
   },
   {
     "key": "moonlight",
     "title": "月光",
-    "before": "images/original_product.webp",
-    "after": "images/moonlight.webp"
+    "before": "images/moonlight_original.png",
+    "after": "images/moonlight_effect.png"
   },
   {
     "key": "stage_follow_spot",
@@ -80,31 +80,31 @@
   {
     "key": "firelight",
     "title": "火光",
-    "before": "images/original_product.webp",
-    "after": "images/firelight.webp"
+    "before": "images/firelight_original.png",
+    "after": "images/firelight_effect.png"
   },
   {
     "key": "water_ripple",
     "title": "水波光影",
-    "before": "images/original_product.webp",
-    "after": "images/water_ripple.webp"
+    "before": "images/water_ripple_original.png",
+    "after": "images/water_ripple_effect.png"
   },
   {
     "key": "color_projection",
     "title": "彩色投影",
-    "before": "images/original_product.webp",
-    "after": "images/color_projection.webp"
+    "before": "images/color_projection_original.png",
+    "after": "images/color_projection_effect.png"
   },
   {
     "key": "hard_light_cut",
     "title": "硬光切割",
-    "before": "images/original_product.webp",
-    "after": "images/hard_light_cut.webp"
+    "before": "images/hard_light_cut_original.png",
+    "after": "images/hard_light_cut_effect.png"
   },
   {
     "key": "studio_softbox",
-    "title": "棚拍柔光",
-    "before": "images/original_product.webp",
-    "after": "images/studio_softbox.webp"
+    "title": "棱晶虹光",
+    "before": "images/studio_softbox_original.png",
+    "after": "images/studio_softbox_effect.png"
   }
 ]

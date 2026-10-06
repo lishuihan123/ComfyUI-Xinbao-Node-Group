@@ -2,6 +2,7 @@
 (() => {
     const gallery = document.getElementById('gallery');
     if (!gallery || document.title !== '心宝打光搭档 · 光效预览') return;
+    const cacheToken = Date.now().toString();
     const make = (tag, className, text) => {
         const element = document.createElement(tag);
         if (className) element.className = className;
@@ -20,23 +21,23 @@
         }
         const frame = make('div', 'frame');
         const after = make('img', 'after');
-        after.src = item.after;
+        after.src = `${item.after}?v=${cacheToken}`;
         after.alt = item.title + '效果图';
         after.loading = 'lazy';
         const before = make('img', 'before');
-        before.src = item.before;
+        before.src = `${item.before}?v=${cacheToken}`;
         before.alt = item.title + '原图';
         before.loading = 'lazy';
         const divider = make('div', 'divider');
-        frame.append(after, before, divider, make('span', 'tag before-label', '原图'), make('span', 'tag after-label', '效果图'));
+        frame.append(before, after, divider, make('span', 'tag effect-label', '效果图'), make('span', 'tag original-label', '原图'));
         const controls = make('div', 'controls');
         const range = make('input');
         range.type = 'range'; range.min = '0'; range.max = '100'; range.value = '0';
-        range.setAttribute('aria-label', item.title + '原图显示比例');
+        range.setAttribute('aria-label', item.title + '效果图显示比例');
         controls.append(make('span', '', '对比'), range);
         const reveal = value => {
             const percent = Math.max(0, Math.min(100, Number(value)));
-            before.style.clipPath = `inset(0 ${100-percent}% 0 0)`;
+            after.style.clipPath = `inset(0 ${100-percent}% 0 0)`;
             divider.style.left = percent + '%';
             frame.classList.toggle('comparing', percent > 0);
             range.value = String(percent);
@@ -61,7 +62,7 @@
         article.append(frame, controls);
         return article;
     }
-    fetch('./cases.json').then(response => {
+    fetch(`./cases.json?v=${cacheToken}`, { cache: 'no-store' }).then(response => {
         if (!response.ok) throw new Error('无法加载案例');
         return response.json();
     }).then(cases => gallery.replaceChildren(...cases.map(card))).catch(() => {
