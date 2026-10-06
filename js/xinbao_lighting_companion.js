@@ -15,7 +15,6 @@ const TRAINED_LIGHTS = [
 
 const EXTRA_LIGHTS = [
     ["rim_light", "轮廓光", "加入明显而自然的轮廓光，使主体边缘形成清晰的高光轮廓，增强主体与背景的层次分离，保持主体结构不变。"],
-    ["dramatic_spotlight", "戏剧聚光", "加入明显的戏剧性聚光灯，使聚光集中照亮主体，周围区域自然变暗，形成清晰但柔和的明暗层次。"],
     ["sunset_gold", "日落金光", "转换为温暖的日落金色光，让低角度暖光自然照射主体与场景，形成明显的金色高光和柔和长阴影。"],
     ["warm_cool_dual", "冷暖双色", "加入明显的冷暖双色打光，一侧为暖色光，另一侧为冷色光，两种光线自然作用于主体和背景，保持真实的明暗关系。"],
     ["neon_dual", "霓虹双色", "加入明显的蓝色与洋红色霓虹光，让彩色光线自然照亮主体与环境表面，呈现真实的颜色反射，不新增霓虹灯牌或其他物体。"],
@@ -26,12 +25,13 @@ const EXTRA_LIGHTS = [
     ["color_projection", "彩色投影", "加入明显的彩色投影光影，使抽象色彩和渐变光线自然投射在主体与背景上，只改变光线，不新增投影设备或文字图案。"],
     ["hard_light_cut", "硬光切割", "加入方向明确的硬光，使主体和场景出现清晰的明暗切割与锐利阴影边缘，保持真实的光线方向和空间关系。"],
     ["studio_softbox", "棚拍柔光", "转换为干净自然的商业棚拍柔光，均匀照亮主体，保留柔和阴影、材质纹理和立体感，避免过曝和塑料感。"],
+    ["dramatic_spotlight", "戏剧聚光", "加入明显的戏剧性聚光灯，使聚光集中照亮主体，周围区域自然变暗，形成清晰但柔和的明暗层次。"],
 ];
 
 const ALL_LIGHTS = [...TRAINED_LIGHTS, ...EXTRA_LIGHTS];
 const LIGHT_MAP = new Map(ALL_LIGHTS.map((item) => [item[0], item]));
 const MIN_NODE_WIDTH = 520;
-const MIN_NODE_HEIGHT = 440;
+const MIN_NODE_HEIGHT = 550;
 
 function enforceNodeSize(node) {
     node.min_size = [MIN_NODE_WIDTH, MIN_NODE_HEIGHT];
@@ -46,11 +46,21 @@ function enforceNodeSize(node) {
 
 function parseSelection(raw) {
     try {
-        const value = JSON.parse(raw || "[]");
+        const parsed = JSON.parse(raw || "[]");
+        const value = Array.isArray(parsed) ? parsed : parsed?.lights;
         if (!Array.isArray(value)) return [];
         return value.filter((key, index) => (LIGHT_MAP.has(key) || key === SUBJECT_FLAG) && value.indexOf(key) === index);
     } catch {
         return [];
+    }
+}
+
+function parseSupplement(raw) {
+    try {
+        const value = JSON.parse(raw || "[]");
+        return typeof value?.supplement === "string" ? value.supplement : "";
+    } catch {
+        return "";
     }
 }
 
@@ -91,19 +101,34 @@ function setupSelector(node) {
     top.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px";
 
     const hint = document.createElement("div");
-    hint.textContent = "可多选 · 再点一次取消";
+    hint.textContent = "可多选，叠加光效";
     hint.style.cssText = "font-size:12px;color:#aeb6ca";
 
     const clear = document.createElement("button");
     clear.type = "button";
     clear.textContent = "清空";
     clear.style.cssText = "border:1px solid #566079;background:#272c3a;color:#dbe2f3;border-radius:6px;padding:4px 10px;cursor:pointer";
-    top.append(hint, clear);
+    const actions = document.createElement("div");
+    actions.style.cssText = "display:flex;gap:6px";
+    const previewButton = document.createElement("button");
+    previewButton.type = "button";
+    previewButton.textContent = "光效预览";
+    previewButton.style.cssText = clear.style.cssText;
+    previewButton.addEventListener("pointerdown", (event) => event.stopPropagation());
+    previewButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const url = new URL("./lighting_preview/index.html", import.meta.url);
+        window.open(url.href, "xinbao-lighting-preview", "popup,width=1080,height=820,resizable=yes,scrollbars=yes");
+    });
+    actions.append(previewButton, clear);
+    top.append(hint, actions);
     root.append(top);
 
     const initialState = parseSelection(stateWidget.value);
     let selected = initialState.filter((key) => key !== SUBJECT_FLAG);
     let subjectEnabled = initialState.includes(SUBJECT_FLAG);
+    let supplement = parseSupplement(stateWidget.value);
     const buttons = new Map();
 
     function applyButtonStyle(button, active) {
@@ -129,7 +154,8 @@ function setupSelector(node) {
 
     function sync() {
         selected = selected.filter((key, index) => LIGHT_MAP.has(key) && selected.indexOf(key) === index);
-        stateWidget.value = JSON.stringify(subjectEnabled ? [...selected, SUBJECT_FLAG] : selected);
+        const lights = subjectEnabled ? [...selected, SUBJECT_FLAG] : selected;
+        stateWidget.value = JSON.stringify(supplement ? { lights, supplement } : lights);
         stateWidget.callback?.(stateWidget.value);
         for (const [key, button] of buttons) applyButtonStyle(button, selected.includes(key));
         subjectCheckbox.checked = subjectEnabled;
@@ -185,10 +211,32 @@ function setupSelector(node) {
     });
     root.append(subjectLabel);
 
+    const supplementLabel = document.createElement("label");
+    supplementLabel.style.cssText = "display:flex;flex-direction:column;gap:7px;margin-top:10px;font-size:13px;font-weight:600;color:#77e5a2";
+    const supplementTitle = document.createElement("span");
+    supplementTitle.textContent = "补充说明";
+    const supplementInput = document.createElement("textarea");
+    supplementInput.setAttribute("aria-label", "补充说明");
+    supplementInput.placeholder = "输入需要追加的提示词…";
+    supplementInput.value = supplement;
+    supplementInput.rows = 3;
+    supplementInput.style.cssText = "box-sizing:border-box;width:100%;min-height:76px;resize:vertical;border:1px solid #465267;border-radius:7px;background:#121722;color:#e3eaf5;padding:8px;font:13px/1.6 system-ui,'Microsoft YaHei',sans-serif;outline-color:#77e5a2";
+    for (const eventName of ["pointerdown", "click", "keydown", "keyup"]) {
+        supplementInput.addEventListener(eventName, (event) => event.stopPropagation());
+    }
+    supplementInput.addEventListener("input", () => {
+        supplement = supplementInput.value;
+        sync();
+    });
+    supplementLabel.append(supplementTitle, supplementInput);
+    root.append(supplementLabel);
+
     node.__xinbaoLightingRestore = () => {
         const saved = parseSelection(stateWidget.value);
         selected = saved.filter((key) => key !== SUBJECT_FLAG);
         subjectEnabled = saved.includes(SUBJECT_FLAG);
+        supplement = parseSupplement(stateWidget.value);
+        supplementInput.value = supplement;
         sync();
     };
 
@@ -198,13 +246,15 @@ function setupSelector(node) {
         event.stopPropagation();
         selected = [];
         subjectEnabled = false;
+        supplement = "";
+        supplementInput.value = "";
         sync();
     });
 
     node.addDOMWidget("xinbao_lighting_selector", "div", root, {
         serialize: false,
         hideOnZoom: false,
-        getMinHeight: () => 390,
+        getMinHeight: () => 500,
     });
     const originalResize = node.onResize;
     node.onResize = function (size) {

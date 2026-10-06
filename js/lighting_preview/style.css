@@ -1,0 +1,27 @@
+:root { color-scheme: dark; font-family: system-ui,"Microsoft YaHei",sans-serif; background:#10131b; color:#e7edf6; }
+* { box-sizing:border-box; }
+body { margin:0; padding:28px 24px; }
+header,main,footer { max-width:1120px; margin:0 auto; }
+.eyebrow { color:#79d8f4; font-size:12px; letter-spacing:.12em; }
+h1 { font-size:25px; margin:8px 0; }
+header p { color:#aeb9cc; font-size:13px; line-height:1.7; margin:0 0 22px; }
+main { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; }
+.card { min-width:0; border:1px solid #30394b; background:#1a202c; border-radius:10px; overflow:hidden; }
+.card h2 { font-size:14px; margin:0; padding:12px; font-weight:600; }
+.frame { position:relative; width:100%; height:250px; background:#0b0e14; overflow:hidden; touch-action:pan-y; }
+.frame img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; user-select:none; pointer-events:none; }
+.before { clip-path:inset(0 100% 0 0); }
+.divider { position:absolute; top:0; bottom:0; left:0; width:2px; background:#fff; pointer-events:none; opacity:0; box-shadow:0 0 5px #0008; }
+.divider::after { content:'↔'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); display:grid; place-items:center; width:25px; height:25px; border-radius:50%; background:#fff; color:#172231; font-size:16px; }
+.tag { position:absolute; top:8px; padding:3px 6px; font-size:10px; color:#fff; border-radius:4px; background:#0009; pointer-events:none; }
+.tag.before-label { left:8px; opacity:0; }
+.tag.after-label { right:8px; }
+.frame.comparing .divider,.frame.comparing .before-label { opacity:1; }
+.controls { display:flex; align-items:center; gap:8px; padding:8px 12px 11px; color:#aab6c9; font-size:10px; }
+.controls span { flex-shrink:0; white-space:nowrap; }
+.controls input { width:100%; min-width:0; accent-color:#6fdef5; height:12px; }
+.empty { display:grid; place-content:center; text-align:center; color:#8b99ae; gap:6px; font-size:13px; }
+.empty small { font-size:11px; }
+footer { padding-top:22px; font-size:11px; color:#8291a8; }
+@media(min-width:1200px) { main { grid-template-columns:repeat(5,1fr); } }
+@media(max-width:440px) { body { padding:20px 12px; } main { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } .frame { height:210px; } }

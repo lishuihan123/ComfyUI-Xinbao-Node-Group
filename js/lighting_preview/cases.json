@@ -1,0 +1,116 @@
+[
+  {
+    "key": "tree_shadow",
+    "title": "树荫光",
+    "before": "images/original_portrait.webp",
+    "after": "images/tree_shadow.webp"
+  },
+  {
+    "key": "striped_light",
+    "title": "条纹光",
+    "before": "images/original_portrait.webp",
+    "after": "images/striped_light.webp"
+  },
+  {
+    "key": "lens_flare",
+    "title": "镜头光晕",
+    "before": "images/original_portrait.webp",
+    "after": "images/lens_flare.webp"
+  },
+  {
+    "key": "transparent_caustics",
+    "title": "透明焦散",
+    "before": "images/original_transparent.webp",
+    "after": "images/transparent_caustics.webp"
+  },
+  {
+    "key": "tyndall_light",
+    "title": "丁达尔光",
+    "before": "images/original_tyndall.webp",
+    "after": "images/tyndall_light.webp"
+  },
+  {
+    "key": "tyndall_light_extra",
+    "title": "丁达尔光 · 案例2",
+    "before": "images/original_portrait.webp",
+    "after": "images/tyndall_light_extra.webp"
+  },
+  {
+    "key": "night_lamp",
+    "title": "夜间开灯",
+    "before": "images/original_night.webp",
+    "after": "images/night_lamp.webp"
+  },
+  {
+    "key": "rim_light",
+    "title": "轮廓光",
+    "before": "images/original_portrait.webp",
+    "after": "images/rim_light.webp"
+  },
+  {
+    "key": "sunset_gold",
+    "title": "日落金光",
+    "before": "images/original_portrait.webp",
+    "after": "images/sunset_gold.webp"
+  },
+  {
+    "key": "warm_cool_dual",
+    "title": "冷暖双色",
+    "before": "images/original_portrait.webp",
+    "after": "images/warm_cool_dual.webp"
+  },
+  {
+    "key": "neon_dual",
+    "title": "霓虹双色",
+    "before": "images/original_portrait.webp",
+    "after": "images/neon_dual.webp"
+  },
+  {
+    "key": "moonlight",
+    "title": "月光",
+    "before": "images/original_product.webp",
+    "after": "images/moonlight.webp"
+  },
+  {
+    "key": "stage_follow_spot",
+    "title": "舞台追光",
+    "before": "images/original_product.webp",
+    "after": "images/stage_follow_spot.webp"
+  },
+  {
+    "key": "firelight",
+    "title": "火光",
+    "before": "images/original_product.webp",
+    "after": "images/firelight.webp"
+  },
+  {
+    "key": "water_ripple",
+    "title": "水波光影",
+    "before": "images/original_product.webp",
+    "after": "images/water_ripple.webp"
+  },
+  {
+    "key": "color_projection",
+    "title": "彩色投影",
+    "before": "images/original_product.webp",
+    "after": "images/color_projection.webp"
+  },
+  {
+    "key": "hard_light_cut",
+    "title": "硬光切割",
+    "before": "images/original_product.webp",
+    "after": "images/hard_light_cut.webp"
+  },
+  {
+    "key": "studio_softbox",
+    "title": "棚拍柔光",
+    "before": "images/original_product.webp",
+    "after": "images/studio_softbox.webp"
+  },
+  {
+    "key": "dramatic_spotlight",
+    "title": "戏剧聚光",
+    "before": "images/original_portrait.webp",
+    "after": "images/dramatic_spotlight.webp"
+  }
+]

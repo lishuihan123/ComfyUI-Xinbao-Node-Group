@@ -149,6 +149,8 @@ def _parse_selection(raw_selection: str) -> list[str]:
     except (TypeError, ValueError, json.JSONDecodeError):
         parsed = [item.strip() for item in str(raw_selection).split(",")]
 
+    if isinstance(parsed, dict):
+        parsed = parsed.get("lights", [])
     if not isinstance(parsed, list):
         return []
 
@@ -199,7 +201,16 @@ class XinbaoLightingPromptSelector:
     DESCRIPTION = "搭配心宝全能打光 LoRA 使用，选择光效更加方便。"
 
     def build_prompt(self, selected_lights="[]"):
-        return (_join_prompts(_parse_selection(selected_lights)),)
+        prompt = _join_prompts(_parse_selection(selected_lights))
+        try:
+            state = json.loads(selected_lights)
+        except (TypeError, ValueError):
+            state = None
+        supplement = state.get("supplement", "") if isinstance(state, dict) else ""
+        if isinstance(supplement, str) and supplement.strip():
+            supplement = supplement.strip()
+            prompt = prompt.rstrip("。；，,; ") + "，" + supplement if prompt else supplement
+        return (prompt,)
 
 
 class XinbaoLightingPromptSelectorLegacy(XinbaoLightingPromptSelector):
