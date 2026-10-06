@@ -220,7 +220,7 @@ function setupSelector(node) {
     addSection("扩展光效", EXTRA_LIGHTS, "#f4bf72");
 
     const directionTitle = document.createElement("div");
-    directionTitle.textContent = "光照方向（即将开发）";
+    directionTitle.textContent = "光照方向（即将开放）";
     directionTitle.style.cssText = "margin:16px 0 7px;padding-top:12px;border-top:1px solid #383044;font-size:12px;font-weight:700;color:#c5a5e8";
     const directionPanel = document.createElement("div");
     directionPanel.setAttribute("role", "group");
@@ -248,9 +248,6 @@ function setupSelector(node) {
         (key === "front" || key === "back" ? depth : compass).append(button);
     }
     directionPanel.append(compass, depth);
-    const directionHint = document.createElement("div");
-    directionHint.textContent = "可点击试用，效果尚不稳定；单选，默认不追加方向提示词";
-    directionHint.style.cssText = "margin-top:6px;font-size:11px;color:#929db3";
 
     const subjectLabel = document.createElement("label");
     subjectLabel.style.cssText = "display:flex;align-items:center;gap:8px;margin-top:16px;padding:6px 2px;font-size:13px;color:#dbe2f3;cursor:pointer;white-space:nowrap";
@@ -289,7 +286,7 @@ function setupSelector(node) {
     });
     supplementLabel.append(supplementTitle, supplementInput);
     root.append(supplementLabel);
-    root.append(directionTitle, directionPanel, directionHint);
+    root.append(directionTitle, directionPanel);
 
     node.__xinbaoLightingRestore = () => {
         const saved = parseSelection(stateWidget.value);
