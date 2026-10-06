@@ -38,7 +38,7 @@ LIGHTING_PROMPTS = OrderedDict(
             "tyndall_light",
             (
                 "丁达尔光",
-                "加入丁达尔光，让可见光束自然穿过空气，并与主体和空间透视保持一致。",
+                "加入强烈、清晰可见的丁达尔光，多束明亮的体积光穿过空气中的薄雾，形成鲜明的光柱与明暗分层；光束照亮人物或产品主体，并在受遮挡区域形成明显阴影，呈现强烈的空间纵深和戏剧性光照，保持光线方向与场景透视一致。",
             ),
         ),
         (
@@ -136,6 +136,11 @@ LIGHTING_PROMPTS = OrderedDict(
 )
 
 
+SUBJECT_FLAG = "__subject_surface__"
+SUBJECT_PROMPT = "光影必须明确作用于人物或产品主体表面，形成清晰的硬光照明与遮挡投影，呈现明显的明暗交界；投影随主体轮廓和曲面自然变化，不得仅作用于背景或地面。"
+SUBJECT_LIGHTS = {"tree_shadow", "striped_light"}
+
+
 def _parse_selection(raw_selection: str) -> list[str]:
     if not raw_selection:
         return []
@@ -151,7 +156,7 @@ def _parse_selection(raw_selection: str) -> list[str]:
     seen = set()
     for item in parsed:
         key = str(item)
-        if key in LIGHTING_PROMPTS and key not in seen:
+        if (key in LIGHTING_PROMPTS or key == SUBJECT_FLAG) and key not in seen:
             selected.append(key)
             seen.add(key)
     return selected
@@ -160,7 +165,11 @@ def _parse_selection(raw_selection: str) -> list[str]:
 def _join_prompts(keys: list[str]) -> str:
     sentences = []
     for key in keys:
+        if key == SUBJECT_FLAG:
+            continue
         prompt = LIGHTING_PROMPTS[key][1].strip().rstrip("。；，,; ")
+        if SUBJECT_FLAG in keys and key in SUBJECT_LIGHTS:
+            prompt += "。" + SUBJECT_PROMPT.rstrip("。")
         if prompt:
             sentences.append(prompt)
     return "，".join(sentences) + ("。" if sentences else "")

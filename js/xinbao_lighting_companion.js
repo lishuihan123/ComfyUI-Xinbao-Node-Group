@@ -2,13 +2,14 @@ import { app } from "/scripts/app.js";
 
 const NODE_CLASSES = new Set(["XinbaoLightingCompanion", "XinbaoLightingPromptSelector"]);
 const NODE_TITLE = "心宝❤打光搭档";
+const SUBJECT_FLAG = "__subject_surface__";
 
 const TRAINED_LIGHTS = [
     ["tree_shadow", "树荫光", "加入自然、真实、方向一致的树荫光，使枝叶形状的光影可以投射在人物、地面和背景上；只添加光影，不新增树木、树枝、树叶或其他植物实体。"],
     ["striped_light", "条纹光", "加入自然的条纹光影，让方向一致的条纹阴影落在主体与场景表面。"],
     ["lens_flare", "镜头光晕", "加入克制、自然的镜头光晕，不遮挡主体与文字。"],
     ["transparent_caustics", "透明焦散", "增强透明材质的透光感、光线传输和自然焦散，保持材质真实。"],
-    ["tyndall_light", "丁达尔光", "加入丁达尔光，让可见光束自然穿过空气，并与主体和空间透视保持一致。"],
+    ["tyndall_light", "丁达尔光", "加入强烈、清晰可见的丁达尔光，多束明亮的体积光穿过空气中的薄雾，形成鲜明的光柱与明暗分层；光束照亮人物或产品主体，并在受遮挡区域形成明显阴影，呈现强烈的空间纵深和戏剧性光照，保持光线方向与场景透视一致。"],
     ["night_lamp", "夜间开灯", "转换为夜间室内光，让台灯自然照亮桌面与场景，保持真实的夜间明暗关系。"],
 ];
 
@@ -47,7 +48,7 @@ function parseSelection(raw) {
     try {
         const value = JSON.parse(raw || "[]");
         if (!Array.isArray(value)) return [];
-        return value.filter((key, index) => LIGHT_MAP.has(key) && value.indexOf(key) === index);
+        return value.filter((key, index) => (LIGHT_MAP.has(key) || key === SUBJECT_FLAG) && value.indexOf(key) === index);
     } catch {
         return [];
     }
@@ -56,13 +57,14 @@ function parseSelection(raw) {
 function setupSelector(node) {
     node.title = NODE_TITLE;
     if (node.__xinbaoLightingSelectorReady) {
+        node.__xinbaoLightingRestore?.();
         enforceNodeSize(node);
         return;
     }
-    node.__xinbaoLightingSelectorReady = true;
 
     const stateWidget = node.widgets?.find((widget) => widget.name === "selected_lights");
     if (!stateWidget) return;
+    node.__xinbaoLightingSelectorReady = true;
 
     stateWidget.type = "converted-widget";
     stateWidget.hidden = true;
@@ -99,7 +101,9 @@ function setupSelector(node) {
     top.append(hint, clear);
     root.append(top);
 
-    let selected = parseSelection(stateWidget.value);
+    const initialState = parseSelection(stateWidget.value);
+    let selected = initialState.filter((key) => key !== SUBJECT_FLAG);
+    let subjectEnabled = initialState.includes(SUBJECT_FLAG);
     const buttons = new Map();
 
     function applyButtonStyle(button, active) {
@@ -125,9 +129,10 @@ function setupSelector(node) {
 
     function sync() {
         selected = selected.filter((key, index) => LIGHT_MAP.has(key) && selected.indexOf(key) === index);
-        stateWidget.value = JSON.stringify(selected);
+        stateWidget.value = JSON.stringify(subjectEnabled ? [...selected, SUBJECT_FLAG] : selected);
         stateWidget.callback?.(stateWidget.value);
         for (const [key, button] of buttons) applyButtonStyle(button, selected.includes(key));
+        subjectCheckbox.checked = subjectEnabled;
         node.graph?.setDirtyCanvas(true, true);
     }
 
@@ -162,18 +167,44 @@ function setupSelector(node) {
     addSection("常用光效", TRAINED_LIGHTS, "#72dcff");
     addSection("扩展光效", EXTRA_LIGHTS, "#f4bf72");
 
+    const subjectLabel = document.createElement("label");
+    subjectLabel.style.cssText = "display:flex;align-items:center;gap:8px;margin-top:16px;padding:6px 2px;font-size:13px;color:#dbe2f3;cursor:pointer;white-space:nowrap";
+    subjectLabel.title = "仅对选中的树荫光、条纹光追加主体硬光与遮挡投影提示词";
+    const subjectCheckbox = document.createElement("input");
+    subjectCheckbox.type = "checkbox";
+    subjectCheckbox.setAttribute("aria-label", "光线作用主体");
+    subjectCheckbox.style.cssText = "width:18px;height:18px;margin:0;accent-color:#36bff1;cursor:pointer";
+    const subjectText = document.createElement("span");
+    subjectText.textContent = "光线作用主体";
+    subjectLabel.append(subjectCheckbox, subjectText);
+    subjectLabel.addEventListener("pointerdown", (event) => event.stopPropagation());
+    subjectLabel.addEventListener("click", (event) => event.stopPropagation());
+    subjectCheckbox.addEventListener("change", () => {
+        subjectEnabled = subjectCheckbox.checked;
+        sync();
+    });
+    root.append(subjectLabel);
+
+    node.__xinbaoLightingRestore = () => {
+        const saved = parseSelection(stateWidget.value);
+        selected = saved.filter((key) => key !== SUBJECT_FLAG);
+        subjectEnabled = saved.includes(SUBJECT_FLAG);
+        sync();
+    };
+
     clear.addEventListener("pointerdown", (event) => event.stopPropagation());
     clear.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
         selected = [];
+        subjectEnabled = false;
         sync();
     });
 
     node.addDOMWidget("xinbao_lighting_selector", "div", root, {
         serialize: false,
         hideOnZoom: false,
-        getMinHeight: () => 350,
+        getMinHeight: () => 390,
     });
     const originalResize = node.onResize;
     node.onResize = function (size) {
@@ -189,6 +220,7 @@ function setupSelector(node) {
     const originalConfigure = node.onConfigure;
     node.onConfigure = function () {
         const result = originalConfigure?.apply(this, arguments);
+        this.__xinbaoLightingRestore?.();
         setTimeout(() => enforceNodeSize(this), 0);
         return result;
     };
