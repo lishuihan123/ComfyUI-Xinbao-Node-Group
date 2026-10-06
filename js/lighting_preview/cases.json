@@ -2,8 +2,8 @@
   {
     "key": "tree_shadow",
     "title": "树荫光",
-    "before": "images/original_portrait.webp",
-    "after": "images/tree_shadow.webp"
+    "before": "images/tree_shadow_original.png",
+    "after": "images/tree_shadow_effect.png"
   },
   {
     "key": "striped_light",
