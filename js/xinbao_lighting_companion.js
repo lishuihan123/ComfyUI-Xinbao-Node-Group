@@ -30,7 +30,7 @@ const EXTRA_LIGHTS = [
 const ALL_LIGHTS = [...TRAINED_LIGHTS, ...EXTRA_LIGHTS];
 const LIGHT_MAP = new Map(ALL_LIGHTS.map((item) => [item[0], item]));
 const MIN_NODE_WIDTH = 520;
-const MIN_NODE_HEIGHT = 610;
+const MIN_NODE_HEIGHT = 440;
 
 function enforceNodeSize(node) {
     node.min_size = [MIN_NODE_WIDTH, MIN_NODE_HEIGHT];
@@ -51,14 +51,6 @@ function parseSelection(raw) {
     } catch {
         return [];
     }
-}
-
-function combinedPrompt(selected) {
-    const prompts = selected
-        .map((key) => LIGHT_MAP.get(key)?.[2] || "")
-        .map((text) => text.trim().replace(/[。；，,;\s]+$/u, ""))
-        .filter(Boolean);
-    return prompts.length ? `${prompts.join("，")}。` : "";
 }
 
 function setupSelector(node) {
@@ -107,9 +99,6 @@ function setupSelector(node) {
     top.append(hint, clear);
     root.append(top);
 
-    const preview = document.createElement("div");
-    preview.style.cssText = "min-height:62px;max-height:116px;overflow:auto;margin-top:9px;padding:8px 9px;border-radius:7px;background:#0e1119;border:1px solid #353b4c;color:#d9deea;font-size:12px;line-height:1.55;white-space:pre-wrap;word-break:break-word";
-
     let selected = parseSelection(stateWidget.value);
     const buttons = new Map();
 
@@ -139,7 +128,6 @@ function setupSelector(node) {
         stateWidget.value = JSON.stringify(selected);
         stateWidget.callback?.(stateWidget.value);
         for (const [key, button] of buttons) applyButtonStyle(button, selected.includes(key));
-        preview.textContent = combinedPrompt(selected) || "尚未选择光效";
         node.graph?.setDirtyCanvas(true, true);
     }
 
@@ -174,11 +162,6 @@ function setupSelector(node) {
     addSection("常用光效", TRAINED_LIGHTS, "#72dcff");
     addSection("扩展光效", EXTRA_LIGHTS, "#f4bf72");
 
-    const previewLabel = document.createElement("div");
-    previewLabel.textContent = "输出预览";
-    previewLabel.style.cssText = "margin:10px 0 5px;font-size:12px;font-weight:700;color:#b9c2d8";
-    root.append(previewLabel, preview);
-
     clear.addEventListener("pointerdown", (event) => event.stopPropagation());
     clear.addEventListener("click", (event) => {
         event.preventDefault();
@@ -190,7 +173,7 @@ function setupSelector(node) {
     node.addDOMWidget("xinbao_lighting_selector", "div", root, {
         serialize: false,
         hideOnZoom: false,
-        getMinHeight: () => 520,
+        getMinHeight: () => 350,
     });
     const originalResize = node.onResize;
     node.onResize = function (size) {
