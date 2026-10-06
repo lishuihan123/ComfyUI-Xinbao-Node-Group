@@ -30,12 +30,6 @@
     "after": "images/tyndall_light.webp"
   },
   {
-    "key": "tyndall_light_extra",
-    "title": "丁达尔光 · 案例2",
-    "before": "images/original_portrait.webp",
-    "after": "images/tyndall_light_extra.webp"
-  },
-  {
     "key": "night_lamp",
     "title": "夜间开灯",
     "before": "images/original_night.webp",
@@ -64,6 +58,12 @@
     "title": "霓虹双色",
     "before": "images/original_portrait.webp",
     "after": "images/neon_dual.webp"
+  },
+  {
+    "key": "dramatic_spotlight",
+    "title": "戏剧聚光",
+    "before": "images/original_portrait.webp",
+    "after": "images/dramatic_spotlight.webp"
   },
   {
     "key": "moonlight",
@@ -106,11 +106,5 @@
     "title": "棚拍柔光",
     "before": "images/original_product.webp",
     "after": "images/studio_softbox.webp"
-  },
-  {
-    "key": "dramatic_spotlight",
-    "title": "戏剧聚光",
-    "before": "images/original_portrait.webp",
-    "after": "images/dramatic_spotlight.webp"
   }
 ]

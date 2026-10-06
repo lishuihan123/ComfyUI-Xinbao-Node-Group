@@ -8,8 +8,9 @@ header p { color:#aeb9cc; font-size:13px; line-height:1.7; margin:0 0 22px; }
 main { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; }
 .card { min-width:0; border:1px solid #30394b; background:#1a202c; border-radius:10px; overflow:hidden; }
 .card h2 { font-size:14px; margin:0; padding:12px; font-weight:600; }
-.frame { position:relative; width:100%; height:250px; background:#0b0e14; overflow:hidden; touch-action:pan-y; }
-.frame img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; user-select:none; pointer-events:none; }
+.frame { position:relative; width:100%; aspect-ratio:3/4; background:#0b0e14; overflow:hidden; touch-action:pan-y; }
+/* Identical centered crops for before/after; fill every card without letterboxing. */
+.frame img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 50%; user-select:none; pointer-events:none; }
 .before { clip-path:inset(0 100% 0 0); }
 .divider { position:absolute; top:0; bottom:0; left:0; width:2px; background:#fff; pointer-events:none; opacity:0; box-shadow:0 0 5px #0008; }
 .divider::after { content:'↔'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); display:grid; place-items:center; width:25px; height:25px; border-radius:50%; background:#fff; color:#172231; font-size:16px; }
@@ -24,4 +25,4 @@ main { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); g
 .empty small { font-size:11px; }
 footer { padding-top:22px; font-size:11px; color:#8291a8; }
 @media(min-width:1200px) { main { grid-template-columns:repeat(5,1fr); } }
-@media(max-width:440px) { body { padding:20px 12px; } main { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } .frame { height:210px; } }
+@media(max-width:440px) { body { padding:20px 12px; } main { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } }
