@@ -140,6 +140,26 @@ SUBJECT_FLAG = "__subject_surface__"
 SUBJECT_PROMPT = "光影必须明确作用于人物或产品主体表面，形成清晰的硬光照明与遮挡投影，呈现明显的明暗交界；投影随主体轮廓和曲面自然变化，不得仅作用于背景或地面。"
 SUBJECT_LIGHTS = {"tree_shadow", "striped_light"}
 
+# Directions describe the source position as seen by the camera, not shadow travel.
+DIRECTION_SOURCES = {
+    "top_left": "从画面左上方斜向照向主体，使主体朝向左上方的表面受光，背光面形成自然阴影",
+    "top": "从主体正上方向下照射，使主体顶部受光，下方及被遮挡部位形成自然阴影",
+    "top_right": "从画面右上方斜向照向主体，使主体朝向右上方的表面受光，背光面形成自然阴影",
+    "left": "从画面左侧横向照向主体，使主体左侧受光，右侧呈现自然的明暗过渡与遮挡阴影",
+    "right": "从画面右侧横向照向主体，使主体右侧受光，左侧呈现自然的明暗过渡与遮挡阴影",
+    "bottom_left": "从画面左下方斜向上照向主体，使主体朝向左下方的表面受光，上方背光面形成自然阴影",
+    "bottom": "从主体正下方向上照射，使主体底部及朝下的表面受光，上方被遮挡部位形成自然阴影",
+    "bottom_right": "从画面右下方斜向上照向主体，使主体朝向右下方的表面受光，上方背光面形成自然阴影",
+    "front": "从主体正前方、靠近相机的位置照向主体，使朝向相机的表面受光，投影沿光线方向落向主体后方的承接表面",
+    "back": "从主体正后方朝相机方向逆光照射，使主体边缘及透光部位受光，朝向相机的正面相对较暗，呈现自然的逆光层次",
+}
+DIRECTION_SUFFIX = "以相机看到的画面为方向参照，将所选光效的主光方向统一为上述方向，同步调整高光、明暗交界与遮挡投影，使其符合主体曲面、遮挡关系和场景透视；保留所选光效的特征，不新增灯具，不移动主体或改变原有构图与背景结构。"
+
+
+def _direction_prompt(direction):
+    source = DIRECTION_SOURCES.get(direction) if isinstance(direction, str) else None
+    return "修改光线方向为" + source + "；" + DIRECTION_SUFFIX if source else ""
+
 
 def _parse_selection(raw_selection: str) -> list[str]:
     if not raw_selection:
@@ -206,6 +226,9 @@ class XinbaoLightingPromptSelector:
             state = json.loads(selected_lights)
         except (TypeError, ValueError):
             state = None
+        direction = _direction_prompt(state.get("direction")) if isinstance(state, dict) else ""
+        if direction:
+            prompt = prompt.rstrip("。；，,; ") + "，" + direction if prompt else direction
         supplement = state.get("supplement", "") if isinstance(state, dict) else ""
         if isinstance(supplement, str) and supplement.strip():
             supplement = supplement.strip()

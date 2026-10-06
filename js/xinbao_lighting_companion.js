@@ -30,8 +30,15 @@ const EXTRA_LIGHTS = [
 
 const ALL_LIGHTS = [...TRAINED_LIGHTS, ...EXTRA_LIGHTS];
 const LIGHT_MAP = new Map(ALL_LIGHTS.map((item) => [item[0], item]));
+const DIRECTIONS = [
+    ["top_left", "左上方"], ["top", "正上方"], ["top_right", "右上方"],
+    ["left", "左侧"], ["default", "默认"], ["right", "右侧"],
+    ["bottom_left", "左下方"], ["bottom", "正下方"], ["bottom_right", "右下方"],
+    ["front", "正前方"], ["back", "正后方"],
+];
+const DIRECTION_KEYS = new Set(DIRECTIONS.map(([key]) => key));
 const MIN_NODE_WIDTH = 520;
-const MIN_NODE_HEIGHT = 550;
+const MIN_NODE_HEIGHT = 740;
 
 function enforceNodeSize(node) {
     node.min_size = [MIN_NODE_WIDTH, MIN_NODE_HEIGHT];
@@ -61,6 +68,15 @@ function parseSupplement(raw) {
         return typeof value?.supplement === "string" ? value.supplement : "";
     } catch {
         return "";
+    }
+}
+
+function parseDirection(raw) {
+    try {
+        const direction = JSON.parse(raw || "[]")?.direction;
+        return DIRECTION_KEYS.has(direction) ? direction : "default";
+    } catch {
+        return "default";
     }
 }
 
@@ -129,7 +145,9 @@ function setupSelector(node) {
     let selected = initialState.filter((key) => key !== SUBJECT_FLAG);
     let subjectEnabled = initialState.includes(SUBJECT_FLAG);
     let supplement = parseSupplement(stateWidget.value);
+    let direction = parseDirection(stateWidget.value);
     const buttons = new Map();
+    const directionButtons = new Map();
 
     function applyButtonStyle(button, active) {
         button.style.cssText = [
@@ -155,9 +173,12 @@ function setupSelector(node) {
     function sync() {
         selected = selected.filter((key, index) => LIGHT_MAP.has(key) && selected.indexOf(key) === index);
         const lights = subjectEnabled ? [...selected, SUBJECT_FLAG] : selected;
-        stateWidget.value = JSON.stringify(supplement ? { lights, supplement } : lights);
+        stateWidget.value = JSON.stringify(supplement || direction !== "default" ? { lights, supplement, direction } : lights);
         stateWidget.callback?.(stateWidget.value);
         for (const [key, button] of buttons) applyButtonStyle(button, selected.includes(key));
+        for (const [key, button] of directionButtons) {
+            applyButtonStyle(button, direction === key);
+        }
         subjectCheckbox.checked = subjectEnabled;
         node.graph?.setDirtyCanvas(true, true);
     }
@@ -192,6 +213,41 @@ function setupSelector(node) {
 
     addSection("常用光效", TRAINED_LIGHTS, "#72dcff");
     addSection("扩展光效", EXTRA_LIGHTS, "#f4bf72");
+
+    const directionTitle = document.createElement("div");
+    directionTitle.textContent = "光照方向（下版正式上线）";
+    directionTitle.style.cssText = "margin:14px 0 7px;font-size:12px;font-weight:700;color:#72dcff";
+    root.append(directionTitle);
+    const directionPanel = document.createElement("div");
+    directionPanel.setAttribute("role", "group");
+    directionPanel.setAttribute("aria-label", "光照方向（单选）");
+    directionPanel.style.cssText = "display:grid;grid-template-columns:3fr 1.3fr;gap:12px";
+    const compass = document.createElement("div");
+    compass.style.cssText = "display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px";
+    const depth = document.createElement("div");
+    depth.style.cssText = "display:grid;grid-template-rows:repeat(2,1fr);gap:6px";
+    for (const [key, title] of DIRECTIONS) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = title;
+        button.dataset.directionKey = key;
+        button.title = key === "default" ? "不追加方向提示词" : `光源来自${title}，以相机画面为参照`;
+        button.addEventListener("pointerdown", event => event.stopPropagation());
+        button.addEventListener("click", event => {
+            event.preventDefault();
+            event.stopPropagation();
+            direction = key;
+            sync();
+        });
+        directionButtons.set(key, button);
+        (key === "front" || key === "back" ? depth : compass).append(button);
+    }
+    directionPanel.append(compass, depth);
+    root.append(directionPanel);
+    const directionHint = document.createElement("div");
+    directionHint.textContent = "按画面视角选择光源方位；默认不追加方向提示词";
+    directionHint.style.cssText = "margin-top:6px;font-size:11px;color:#929db3";
+    root.append(directionHint);
 
     const subjectLabel = document.createElement("label");
     subjectLabel.style.cssText = "display:flex;align-items:center;gap:8px;margin-top:16px;padding:6px 2px;font-size:13px;color:#dbe2f3;cursor:pointer;white-space:nowrap";
@@ -236,6 +292,7 @@ function setupSelector(node) {
         selected = saved.filter((key) => key !== SUBJECT_FLAG);
         subjectEnabled = saved.includes(SUBJECT_FLAG);
         supplement = parseSupplement(stateWidget.value);
+        direction = parseDirection(stateWidget.value);
         supplementInput.value = supplement;
         sync();
     };
@@ -247,6 +304,7 @@ function setupSelector(node) {
         selected = [];
         subjectEnabled = false;
         supplement = "";
+        direction = "default";
         supplementInput.value = "";
         sync();
     });
@@ -254,7 +312,7 @@ function setupSelector(node) {
     node.addDOMWidget("xinbao_lighting_selector", "div", root, {
         serialize: false,
         hideOnZoom: false,
-        getMinHeight: () => 500,
+        getMinHeight: () => 690,
     });
     const originalResize = node.onResize;
     node.onResize = function (size) {
