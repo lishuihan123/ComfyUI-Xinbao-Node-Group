@@ -37,7 +37,6 @@ const DIRECTIONS = [
     ["front", "正前方"], ["back", "正后方"],
 ];
 const DIRECTION_KEYS = new Set(DIRECTIONS.map(([key]) => key));
-const DIRECTION_ENABLED = true;
 const MIN_NODE_WIDTH = 520;
 const MIN_NODE_HEIGHT = 740;
 
@@ -73,12 +72,19 @@ function parseSupplement(raw) {
 }
 
 function parseDirection(raw) {
-    if (!DIRECTION_ENABLED) return "default";
     try {
         const direction = JSON.parse(raw || "[]")?.direction;
         return DIRECTION_KEYS.has(direction) ? direction : "default";
     } catch {
         return "default";
+    }
+}
+
+function parseDirectionEnabled(raw) {
+    try {
+        return JSON.parse(raw || "[]")?.direction_enabled === true;
+    } catch {
+        return false;
     }
 }
 
@@ -148,6 +154,7 @@ function setupSelector(node) {
     let subjectEnabled = initialState.includes(SUBJECT_FLAG);
     let supplement = parseSupplement(stateWidget.value);
     let direction = parseDirection(stateWidget.value);
+    let directionEnabled = parseDirectionEnabled(stateWidget.value);
     const buttons = new Map();
     const directionButtons = new Map();
 
@@ -175,15 +182,17 @@ function setupSelector(node) {
     function sync() {
         selected = selected.filter((key, index) => LIGHT_MAP.has(key) && selected.indexOf(key) === index);
         const lights = subjectEnabled ? [...selected, SUBJECT_FLAG] : selected;
-        stateWidget.value = JSON.stringify(supplement || direction !== "default" ? { lights, supplement, direction } : lights);
+        stateWidget.value = JSON.stringify(supplement || direction !== "default" || directionEnabled ? { lights, supplement, direction, direction_enabled: directionEnabled } : lights);
         stateWidget.callback?.(stateWidget.value);
         for (const [key, button] of buttons) applyButtonStyle(button, selected.includes(key));
         for (const [key, button] of directionButtons) {
             applyButtonStyle(button, direction === key);
             if (direction === key) button.style.cssText += ";border-color:#b99be3;background:linear-gradient(180deg,#8b65b5,#624580);box-shadow:0 0 9px rgba(174,130,222,.25)";
-            button.disabled = !DIRECTION_ENABLED;
-            if (!DIRECTION_ENABLED) button.style.cssText += ";opacity:.45;cursor:not-allowed;box-shadow:none";
+            button.disabled = !directionEnabled;
+            if (!directionEnabled) button.style.cssText += ";opacity:.45;cursor:not-allowed;box-shadow:none";
         }
+        directionToggle.setAttribute("aria-checked", String(directionEnabled));
+        directionToggle.style.cssText = `border:1px solid ${directionEnabled ? "#b99be3" : "#555d70"};background:${directionEnabled ? "#724c97" : "#272c3a"};color:${directionEnabled ? "#fff" : "#c9cfdd"};border-radius:12px;padding:4px 10px;font-size:12px;white-space:nowrap;cursor:pointer`;
         subjectCheckbox.checked = subjectEnabled;
         node.graph?.setDirtyCanvas(true, true);
     }
@@ -219,9 +228,24 @@ function setupSelector(node) {
     addSection("常用光效", TRAINED_LIGHTS, "#72dcff");
     addSection("扩展光效", EXTRA_LIGHTS, "#f4bf72");
 
+    const directionHeader = document.createElement("div");
+    directionHeader.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:8px;margin:16px 0 7px;padding-top:12px;border-top:1px solid #383044";
     const directionTitle = document.createElement("div");
     directionTitle.textContent = "光照方向（即将开放）";
-    directionTitle.style.cssText = "margin:16px 0 7px;padding-top:12px;border-top:1px solid #383044;font-size:12px;font-weight:700;color:#c5a5e8";
+    directionTitle.style.cssText = "font-size:12px;font-weight:700;color:#c5a5e8";
+    const directionToggle = document.createElement("button");
+    directionToggle.type = "button";
+    directionToggle.textContent = "仍要体验";
+    directionToggle.setAttribute("role", "switch");
+    directionToggle.setAttribute("aria-label", "仍要体验");
+    directionToggle.addEventListener("pointerdown", event => event.stopPropagation());
+    directionToggle.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        directionEnabled = !directionEnabled;
+        sync();
+    });
+    directionHeader.append(directionTitle, directionToggle);
     const directionPanel = document.createElement("div");
     directionPanel.setAttribute("role", "group");
     directionPanel.setAttribute("aria-label", "光照方向（单选）");
@@ -235,12 +259,12 @@ function setupSelector(node) {
         button.type = "button";
         button.textContent = title;
         button.dataset.directionKey = key;
-        button.title = !DIRECTION_ENABLED ? "当前版本暂未开放，不输出方向提示词" : key === "default" ? "不追加方向提示词" : `光源来自${title}，以相机画面为参照`;
+        button.title = key === "default" ? "不追加方向提示词" : `光源来自${title}，以相机画面为参照`;
         button.addEventListener("pointerdown", event => event.stopPropagation());
         button.addEventListener("click", event => {
             event.preventDefault();
             event.stopPropagation();
-            if (!DIRECTION_ENABLED) return;
+            if (!directionEnabled) return;
             direction = key;
             sync();
         });
@@ -286,7 +310,7 @@ function setupSelector(node) {
     });
     supplementLabel.append(supplementTitle, supplementInput);
     root.append(supplementLabel);
-    root.append(directionTitle, directionPanel);
+    root.append(directionHeader, directionPanel);
 
     node.__xinbaoLightingRestore = () => {
         const saved = parseSelection(stateWidget.value);
@@ -294,6 +318,7 @@ function setupSelector(node) {
         subjectEnabled = saved.includes(SUBJECT_FLAG);
         supplement = parseSupplement(stateWidget.value);
         direction = parseDirection(stateWidget.value);
+        directionEnabled = parseDirectionEnabled(stateWidget.value);
         supplementInput.value = supplement;
         sync();
     };
@@ -306,6 +331,7 @@ function setupSelector(node) {
         subjectEnabled = false;
         supplement = "";
         direction = "default";
+        directionEnabled = false;
         supplementInput.value = "";
         sync();
     });
