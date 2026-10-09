@@ -51,7 +51,7 @@ function injectStyles() {
     const style = document.createElement("style");
     style.id = "xinbao-pintu-styles";
     style.textContent = `
-        .xinbao-pintu-root { width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; padding: 6px; color: var(--fg-color, #ddd); font-family: sans-serif; overflow: hidden; }
+        .xinbao-pintu-root { box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; padding: 6px; color: var(--fg-color, #ddd); font-family: sans-serif; overflow: hidden; }
         .xinbao-pintu-toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
         .xinbao-pintu-toolbar.mode4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
         .xinbao-pintu-slider-row { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; font-size: 12px; }
@@ -343,6 +343,10 @@ function setupEditor(node) {
 
     let editorMinHeight = 680;
     const FIXED_NODE_WIDTH = 560;
+    const CONTENT_WIDTH = FIXED_NODE_WIDTH - 24;
+    root.style.width = `${CONTENT_WIDTH}px`;
+    root.style.minWidth = `${CONTENT_WIDTH}px`;
+    root.style.maxWidth = `${CONTENT_WIDTH}px`;
 
     function layoutStageFromBackground() {
         requestAnimationFrame(() => {
@@ -917,6 +921,29 @@ function setupEditor(node) {
     });
     node.setSize?.([FIXED_NODE_WIDTH, 860]);
 
+    let layoutFrame = 0;
+    const syncDomLayout = () => {
+        cancelAnimationFrame(layoutFrame);
+        layoutFrame = requestAnimationFrame(() => {
+            if (!root.isConnected) return;
+            root.style.width = `${CONTENT_WIDTH}px`;
+            root.style.minWidth = `${CONTENT_WIDTH}px`;
+            root.style.maxWidth = `${CONTENT_WIDTH}px`;
+            const height = Number(node.size?.[1] || 860);
+            if (Number(node.size?.[0] || 0) !== FIXED_NODE_WIDTH) {
+                node.setSize?.([FIXED_NODE_WIDTH, height]);
+            }
+            layoutStageFromBackground();
+            node.setDirtyCanvas?.(true, true);
+        });
+    };
+    const layoutObserver = new ResizeObserver(syncDomLayout);
+    setTimeout(() => {
+        if (root.parentElement) layoutObserver.observe(root.parentElement);
+        syncDomLayout();
+    }, 0);
+    window.addEventListener("resize", syncDomLayout);
+
     node.__xinbaoPintuSync = syncFromInputs;
     setTimeout(syncFromInputs, 0);
 
@@ -929,6 +956,9 @@ function setupEditor(node) {
 
     const originalRemoved = node.onRemoved;
     node.onRemoved = function () {
+        layoutObserver.disconnect();
+        cancelAnimationFrame(layoutFrame);
+        window.removeEventListener("resize", syncDomLayout);
         originalRemoved?.apply(this, arguments);
     };
 }

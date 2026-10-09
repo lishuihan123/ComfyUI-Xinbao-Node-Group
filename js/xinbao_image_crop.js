@@ -16,9 +16,11 @@ function setupCrop(node) {
     let state = readState();
     let source = null, sourceWidth = 0, sourceHeight = 0, sourceKey = "";
     let requestId = 0, geometry = null, drag = null;
+    const FIXED_NODE_WIDTH = 560;
+    const CONTENT_WIDTH = FIXED_NODE_WIDTH - 24;
     const root = document.createElement("div");
     root.className = "xinbao-crop-editor";
-    root.style.cssText = "width:100%;height:100%;box-sizing:border-box;padding:10px;display:flex;flex-direction:column;gap:10px;color:#eee;background:#20232b;font:13px sans-serif;overflow:auto";
+    root.style.cssText = `width:${CONTENT_WIDTH}px;min-width:${CONTENT_WIDTH}px;max-width:${CONTENT_WIDTH}px;height:100%;box-sizing:border-box;padding:10px;display:flex;flex-direction:column;gap:10px;color:#eee;background:#20232b;font:13px sans-serif;overflow:auto`;
     const controls = [];
     const make = (tag, parent, text) => {
         const el = document.createElement(tag);
@@ -386,7 +388,27 @@ function setupCrop(node) {
         return result;
     };
     node.addDOMWidget("xinbao_crop_editor", "div", root, {serialize: false, hideOnZoom: false, getMinHeight: () => 730});
-    node.setSize([560, 870]);
+    node.setSize([FIXED_NODE_WIDTH, 870]);
+    let layoutFrame = 0;
+    const syncDomLayout = () => {
+        cancelAnimationFrame(layoutFrame);
+        layoutFrame = requestAnimationFrame(() => {
+            if (!root.isConnected) return;
+            root.style.width = `${CONTENT_WIDTH}px`;
+            root.style.minWidth = `${CONTENT_WIDTH}px`;
+            root.style.maxWidth = `${CONTENT_WIDTH}px`;
+            if (Number(node.size?.[0] || 0) !== FIXED_NODE_WIDTH) {
+                node.setSize?.([FIXED_NODE_WIDTH, Number(node.size?.[1] || 870)]);
+            }
+            node.setDirtyCanvas?.(true, true);
+        });
+    };
+    const layoutObserver = new ResizeObserver(syncDomLayout);
+    setTimeout(() => {
+        if (root.parentElement) layoutObserver.observe(root.parentElement);
+        syncDomLayout();
+    }, 0);
+    window.addEventListener("resize", syncDomLayout);
     const observer = new ResizeObserver(() => {
         const box = canvas.getBoundingClientRect();
         if (box.width && box.height) { canvas.width = Math.round(box.width * 2); canvas.height = Math.round(box.height * 2); draw(); }
@@ -394,7 +416,7 @@ function setupCrop(node) {
     observer.observe(canvas);
     const timer = setInterval(() => { if (root.isConnected) syncSource(); }, 1200);
     const removed = node.onRemoved;
-    node.onRemoved = function () { clearInterval(timer); observer.disconnect(); document.removeEventListener("pointerdown", outsideRatio, true); requestId++; removed?.apply(this, arguments); };
+    node.onRemoved = function () { clearInterval(timer); observer.disconnect(); layoutObserver.disconnect(); cancelAnimationFrame(layoutFrame); window.removeEventListener("resize", syncDomLayout); document.removeEventListener("pointerdown", outsideRatio, true); requestId++; removed?.apply(this, arguments); };
     node.__xinbaoCrop = {restore() { state = readState(); refresh(); syncSource(); }, root};
     refresh(); setTimeout(syncSource, 0);
 }
