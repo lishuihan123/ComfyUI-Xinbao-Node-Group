@@ -201,10 +201,12 @@ function setupCrop(node) {
         if (/^#[0-9a-f]{6}$/i.test(hex.value)) commit({background: hex.value});
         else refresh();
     });
-    const hint = make("div", root, "拖动图片移动 · 滚轮缩放 · 白框内为输出 · 点击锁固定全部设置");
-    hint.style.cssText = "font-size:12px;color:#abb6c7;line-height:1.6";
     const sourceStatus = make("div", root);
-    sourceStatus.style.cssText = "font-size:12px;color:#ffcf89;min-height:16px";
+    sourceStatus.style.cssText = "display:none;font-size:12px;color:#ffcf89;line-height:1.6";
+    const setSourceStatus = text => {
+        sourceStatus.textContent = text || "";
+        sourceStatus.style.display = text ? "block" : "none";
+    };
 
     function save() {
         widget.value = JSON.stringify(state);
@@ -215,7 +217,7 @@ function setupCrop(node) {
         const next = {...state, ...change};
         const size = cropSize(next);
         if (size.some(v => !Number.isFinite(v) || v > 16384)) {
-            sourceStatus.textContent = "输出单边不能超过 16384 像素，请减小输入值。";
+            setSourceStatus("输出单边不能超过 16384 像素，请减小输入值。");
             return refresh();
         }
         if (![next.zoom, next.x, next.y].every(Number.isFinite)) return refresh();
@@ -325,10 +327,10 @@ function setupCrop(node) {
         image.onload = () => {
             if (ticket !== requestId) return;
             source = image; sourceWidth = ref.width || image.naturalWidth; sourceHeight = ref.height || image.naturalHeight;
-            sourceStatus.textContent = `输入 ${sourceWidth} × ${sourceHeight} · 批量输入使用相同裁切，预览第一张`;
+            setSourceStatus("");
             refresh();
         };
-        image.onerror = () => { if (ticket === requestId) { sourceKey = ""; sourceStatus.textContent = "预览图片不可用，请运行节点后刷新预览。"; } };
+        image.onerror = () => { if (ticket === requestId) { sourceKey = ""; setSourceStatus("预览图片不可用，请运行节点后刷新预览。"); } };
         image.src = url;
     }
     function originNode() {
@@ -346,7 +348,7 @@ function setupCrop(node) {
         }
         if (!origin) {
             source = null; sourceKey = ""; requestId++;
-            sourceStatus.textContent = "请连接 IMAGE 输入。"; draw(); return;
+            setSourceStatus("请连接 IMAGE 输入。"); draw(); return;
         }
         if (origin.comfyClass === "LoadImage" || origin.type === "LoadImage") {
             const path = origin.widgets?.find(w => w.name === "image")?.value;
@@ -363,7 +365,7 @@ function setupCrop(node) {
             loadSource(cached, cached.filename, force);
         } else {
             source = null; sourceKey = ""; requestId++;
-            sourceStatus.textContent = "此输入来自处理节点，请先运行一次取得真实输入预览。"; draw();
+            setSourceStatus("此输入来自处理节点，请先运行一次取得真实输入预览。"); draw();
         }
     }
     const executed = node.onExecuted;

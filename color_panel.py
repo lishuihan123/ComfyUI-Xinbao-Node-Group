@@ -18,7 +18,7 @@ class XinbaoColorPanel:
     RETURN_TYPES = ("IMAGE", "INT", "INT", "STRING")
     RETURN_NAMES = ("图像", "宽", "高", "HEX色号")
     FUNCTION = "create"
-    CATEGORY = "心宝❤节点组"
+    CATEGORY = "心宝♥节点组"
     DESCRIPTION = "设置宽高与 HEX 填充色。勾选 PNG 透明背景后忽略颜色，输出全透明 RGBA 图像，连接保存图像可保存透明 PNG。"
 
     def create(self, width, height, color, transparent_background=False):
@@ -36,4 +36,4 @@ class XinbaoColorPanel:
 
 
 NODE_CLASS_MAPPINGS = {"XinbaoColorPanel": XinbaoColorPanel}
-NODE_DISPLAY_NAME_MAPPINGS = {"XinbaoColorPanel": "心宝❤颜色面板"}
+NODE_DISPLAY_NAME_MAPPINGS = {"XinbaoColorPanel": "心宝♥颜色面板"}

@@ -84,7 +84,7 @@ class XinbaoImageStandardizer:
         "1K输出1024，2K输出2048",
     )
     FUNCTION = "standardize"
-    CATEGORY = "心宝❤节点组"
+    CATEGORY = "心宝♥节点组"
     DESCRIPTION = "为 Qwen-Image 2.1 等图像模型提供标准化处理，减少画面与构图偏移。"
 
     def standardize(self, image, resolution, resize_method):
@@ -130,5 +130,5 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "XinbaoImageStandardizer": "心宝❤图片标准化",
+    "XinbaoImageStandardizer": "心宝♥图片标准化",
 }

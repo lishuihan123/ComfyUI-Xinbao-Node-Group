@@ -287,7 +287,7 @@ class XinbaoPintu:
     RETURN_TYPES = ("IMAGE", "MASK")
     RETURN_NAMES = ("拼合图", "产品遮罩")
     FUNCTION = "compose"
-    CATEGORY = "心宝❤节点组"
+    CATEGORY = "心宝♥节点组"
     DESCRIPTION = (
         "输入背景图与产品图，在节点画布中拖动、缩放、旋转并锁定。"
         "背景图尺寸就是最终输出尺寸；产品不能超出背景范围。"
@@ -393,5 +393,5 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "XinbaoPintu": "心宝❤构图",
+    "XinbaoPintu": "心宝♥构图",
 }

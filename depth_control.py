@@ -35,7 +35,7 @@ class XinbaoDepthDetailControl:
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("adjusted_depth",)
     FUNCTION = "adjust"
-    CATEGORY = "心宝❤节点组/深度"
+    CATEGORY = "心宝♥节点组/深度"
     DESCRIPTION = "视频复刻时调节深度视频的阈值、层级与平滑度，在保持帧间连贯性的同时获得更合适的深度控制，从而改善复刻效果。"
 
     @staticmethod
@@ -94,5 +94,5 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "XinbaoDepthDetailControl": "心宝❤深度调节",
+    "XinbaoDepthDetailControl": "心宝♥深度调节",
 }

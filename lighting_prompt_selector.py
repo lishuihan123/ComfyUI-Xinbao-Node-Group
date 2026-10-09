@@ -223,7 +223,7 @@ class XinbaoLightingPromptSelector:
     RETURN_NAMES = ("文本",)
     OUTPUT_TOOLTIPS = ("把所有已选光效的完整提示词用中文逗号合并。",)
     FUNCTION = "build_prompt"
-    CATEGORY = "心宝❤节点组/提示词"
+    CATEGORY = "心宝♥节点组/提示词"
     DESCRIPTION = "搭配心宝全能打光 LoRA 使用，选择光效更加方便。"
 
     def build_prompt(self, selected_lights="[]"):
@@ -255,6 +255,6 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "XinbaoLightingCompanion": "心宝❤打光搭档",
-    "XinbaoLightingPromptSelector": "心宝❤打光搭档",
+    "XinbaoLightingCompanion": "心宝♥打光搭档",
+    "XinbaoLightingPromptSelector": "心宝♥打光搭档",
 }

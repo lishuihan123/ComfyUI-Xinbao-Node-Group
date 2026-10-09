@@ -90,7 +90,7 @@ class XinbaoImageCrop:
     RETURN_TYPES = ("IMAGE", "INT", "INT", "INT", "INT")
     RETURN_NAMES = ("裁切图片", "宽", "高", "长边", "短边")
     FUNCTION = "crop"
-    CATEGORY = "心宝❤节点组"
+    CATEGORY = "心宝♥节点组"
     DESCRIPTION = "选择标准比例与像素，拖动/缩放图片调整居中裁切框内的画面；空白补色，锁定后防止误改。"
 
     def crop(self, image, crop_state):
@@ -112,4 +112,4 @@ class XinbaoImageCrop:
 
 
 NODE_CLASS_MAPPINGS = {"XinbaoImageCrop": XinbaoImageCrop}
-NODE_DISPLAY_NAME_MAPPINGS = {"XinbaoImageCrop": "心宝❤图像裁切"}
+NODE_DISPLAY_NAME_MAPPINGS = {"XinbaoImageCrop": "心宝♥图像裁切"}
