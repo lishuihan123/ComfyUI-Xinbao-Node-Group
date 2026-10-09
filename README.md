@@ -73,6 +73,20 @@
 
 节点输出一个文本，可连接到工作流的提示词输入或文本拼接节点。开启方向体验时，输出顺序为 **方向词 → 光效词 → 补充说明**；关闭时仅输出光效词与补充说明。节点负责组合提示词，实际出图仍由所用模型、LoRA 和工作流完成。
 
+### 从心宝 Banana 迁入的本地工具
+
+以下 7 个纯本地功能已真正迁入本仓库，并保留原节点 ID，旧工作流无需更换节点：
+
+- **心宝♥提示词助手**：管理、分类并快速组合常用提示词片段；数据保存在本插件目录。
+- **心宝♥合成PSD**：把一批图片写入同一个带图层的 PSD 文件。
+- **心宝♥分层数**：把“一层至五层”的选择转换为详情页流程使用的数量。
+- **心宝♥智能拼图**：自动将 1～4 张图片纵向或 2×2 拼合。
+- **心宝♥图片加载**：带清空占位图的本地图片加载节点。
+- **心宝♥图片拆分**：将图片拆成四方格或九宫格批次。
+- **心宝♥图像分割**：使用 SAM + GroundingDINO 按提示词进行本地抠图。
+
+“心宝♥Mask遮罩”依赖 Banana 的绑定流程，仍保留在私有 Banana 插件中，不属于本仓库。
+
 ## 安装节点
 
 把仓库克隆到 ComfyUI 的 `custom_nodes` 目录：
@@ -82,7 +96,13 @@ cd ComfyUI\custom_nodes
 git clone https://github.com/lishuihan123/ComfyUI-Xinbao-Node-Group.git
 ```
 
-重启 ComfyUI 并刷新浏览器后，可在 `心宝♥节点组` 分类中找到图片标准化、图像裁切、颜色面板、构图、深度调节和打光搭档。`requirements.txt` 不要求额外 Python 包；Pillow、NumPy 和 PyTorch 由常规 ComfyUI 环境提供。
+安装依赖后重启 ComfyUI 并刷新浏览器，即可在 `心宝♥节点组` 分类中找到以上功能：
+
+```powershell
+pip install -r requirements.txt
+```
+
+Pillow、NumPy、PyTorch 和 torchvision 由常规 ComfyUI 环境提供；合成 PSD 额外使用 `psd-tools`，Python 3.10 的提示词助手额外使用 `toml`，图像分割所需依赖由 `requirements.txt` 一并声明。
 
 `心宝♥推理（极速版）` 已拆分为独立项目：[`ComfyUI-Xinbao-Inference-Fast`](https://github.com/lishuihan123/ComfyUI-Xinbao-Inference-Fast)。需要提示词扩写、图片/视频反推时请单独安装该仓库。
 

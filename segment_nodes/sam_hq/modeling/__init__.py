@@ -1,0 +1,1 @@
+"""HQ-SAM model components."""

@@ -1,1 +1,15 @@
-# No extra dependencies. Pillow, NumPy and PyTorch are provided by ComfyUI.
+# Pillow, NumPy, PyTorch and torchvision are provided by ComfyUI.
+psd-tools>=1.9.0
+toml; python_version < "3.11"
+opencv-contrib-python>=4.0.0
+scikit-image
+segment-anything
+pymatting
+timm
+transformers
+huggingface-hub
+addict
+yapf
+PyYAML
+scipy
+tqdm
