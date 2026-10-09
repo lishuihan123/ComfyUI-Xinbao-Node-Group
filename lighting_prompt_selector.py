@@ -247,6 +247,9 @@ class XinbaoLightingPromptSelectorLegacy(XinbaoLightingPromptSelector):
     """仅用于自动打开旧工作流中已保存的节点。"""
 
     DEPRECATED = True
+    # 经典右键菜单只识别 DEV_ONLY 的 skip_list 标记。
+    # 保留注册以兼容旧工作流，但不再把旧入口列入正常菜单。
+    DEV_ONLY = True
 
 
 NODE_CLASS_MAPPINGS = {
