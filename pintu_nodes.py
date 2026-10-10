@@ -1,6 +1,7 @@
 import base64
 import io
 import json
+import uuid
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
@@ -14,8 +15,9 @@ import folder_paths
 DEFAULT_TRANSFORM = {
     "x": 0.5,
     "y": 0.5,
-    "scale": 0.35,
+    "scale": 1.0,
     "rotation": 0.0,
+    "auto_fit": True,
 }
 
 
@@ -48,8 +50,9 @@ def _tensor_to_rgba(image: torch.Tensor) -> Image.Image:
 
 
 def _pil_to_image_tensor(image: Image.Image) -> torch.Tensor:
-    rgb = np.asarray(image.convert("RGB"), dtype=np.float32) / 255.0
-    return torch.from_numpy(rgb).unsqueeze(0)
+    mode = "RGBA" if image.getchannel("A").getextrema()[0] < 255 else "RGB"
+    pixels = np.asarray(image.convert(mode), dtype=np.float32) / 255.0
+    return torch.from_numpy(pixels).unsqueeze(0)
 
 
 def _pil_to_mask_tensor(mask: Image.Image) -> torch.Tensor:
@@ -102,18 +105,31 @@ def _resolve_ref_path(raw_ref: str) -> Optional[Path]:
 
 
 def _image_from_tensor_or_ref(image: torch.Tensor, raw_ref: str) -> Image.Image:
-    path = _resolve_ref_path(raw_ref)
+    connected = _tensor_to_rgba(image)
+    try:
+        path = _resolve_ref_path(raw_ref)
+    except FileNotFoundError:
+        path = None
     if path is not None:
-        return _load_rgba(path)
-    return _tensor_to_rgba(image)
+        original = _load_rgba(path)
+        # Recover LoadImage's PNG alpha only when the reference still matches
+        # the connected RGB pixels. A previous preview must not replace new input.
+        if original.size == connected.size and np.array_equal(
+            np.asarray(original)[..., :3], np.asarray(connected)[..., :3]
+        ):
+            return original
+    return connected
 
 
 def _parse_transform(raw: str) -> Dict[str, float]:
     data = dict(DEFAULT_TRANSFORM)
+    parsed = {}
     try:
         parsed = json.loads(raw) if raw else {}
         if isinstance(parsed, dict):
             data.update(parsed)
+        else:
+            parsed = {}
     except Exception:
         pass
 
@@ -131,7 +147,17 @@ def _parse_transform(raw: str) -> Dict[str, float]:
         "y": number("y", 0.5),
         "scale": max(0.001, number("scale", 0.35)),
         "rotation": number("rotation", 0.0) % 360.0,
+        "auto_fit": bool(parsed.get("auto_fit", "scale" not in parsed)),
+        "user_edited": bool(parsed.get("user_edited", False)),
     }
+
+
+def _save_editor_preview(image: Image.Image, name: str) -> dict:
+    directory = Path(folder_paths.get_temp_directory())
+    directory.mkdir(parents=True, exist_ok=True)
+    filename = f"xinbao_pintu_{name}_{uuid.uuid4().hex}.png"
+    image.save(directory / filename)
+    return {"filename": filename, "subfolder": "", "type": "temp"}
 
 
 def _max_scale_to_fit(bg_w: int, bg_h: int, ov_w: int, ov_h: int, rotation_deg: float) -> float:
@@ -141,6 +167,15 @@ def _max_scale_to_fit(bg_w: int, bg_h: int, ov_w: int, ov_h: int, rotation_deg: 
     limit_x = 1.0 / max(1e-8, c + ratio * s)
     limit_y = (bg_h / max(1.0, bg_w)) / max(1e-8, s + ratio * c)
     return max(0.001, min(limit_x, limit_y))
+
+
+def _is_legacy_default_transform(raw: str, transform: dict, fit_scale: float, locked: bool) -> bool:
+    if locked or not raw or transform.get("user_edited"):
+        return False
+    if any(transform[key] != value for key, value in {"x": 0.5, "y": 0.5, "rotation": 0}.items()):
+        return False
+    old_fit = max(0.03, 0.42 * fit_scale)
+    return any(abs(transform["scale"] - value) < 0.0000005 for value in (0.35, old_fit))
 
 
 def _clamp_transform(bg_w: int, bg_h: int, ov_w: int, ov_h: int, transform: Dict[str, float]) -> Dict[str, float]:
@@ -305,17 +340,24 @@ class XinbaoPintu:
         background_ref: str,
         product_ref: str,
         paint_layer: str,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        del locked
-
-        background_rgba = _image_from_tensor_or_ref(background, background_ref)
+    ) -> dict:
+        # The connected background is authoritative, including unexecuted color panels.
+        background_rgba = _tensor_to_rgba(background)
         product_rgba = _image_from_tensor_or_ref(product, product_ref)
         transform = _parse_transform(transform_json)
-
         bg_w, bg_h = background_rgba.size
         ov_w, ov_h = product_rgba.size
         if bg_w < 1 or bg_h < 1 or ov_w < 1 or ov_h < 1:
             raise ValueError("图片尺寸无效。")
+
+        fit_scale = _max_scale_to_fit(bg_w, bg_h, ov_w, ov_h, 0)
+        auto_fit = transform.pop("auto_fit") or _is_legacy_default_transform(
+            transform_json, transform, fit_scale, locked
+        )
+        user_edited = transform.pop("user_edited")
+        if auto_fit:
+            transform = {"x": 0.5, "y": 0.5, "rotation": 0.0,
+                         "scale": fit_scale}
 
         transform = _clamp_transform(bg_w, bg_h, ov_w, ov_h, transform)
 
@@ -355,11 +397,17 @@ class XinbaoPintu:
             composite.alpha_composite(outline_layer, dest=(left + outline_dx, top + outline_dy))
         composite.alpha_composite(rotated, dest=(left, top))
 
-        binary_alpha = alpha.point(lambda p: 255 if p >= 8 else 0, mode="L")
         mask = Image.new("L", (bg_w, bg_h), 0)
-        mask.paste(binary_alpha, (left, top))
+        mask.paste(alpha, (left, top))
 
-        return _pil_to_image_tensor(composite), _pil_to_mask_tensor(mask)
+        return {
+            "ui": {"xinbao_pintu": [{
+                "background": _save_editor_preview(background_rgba, "background"),
+                "product": _save_editor_preview(product_rgba, "product"),
+                "transform": {**transform, "auto_fit": auto_fit, "user_edited": user_edited},
+            }]},
+            "result": (_pil_to_image_tensor(composite), _pil_to_mask_tensor(mask)),
+        }
 
     @classmethod
     def IS_CHANGED(

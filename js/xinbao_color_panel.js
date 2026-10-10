@@ -10,7 +10,7 @@ function setupPanel(node) {
     }
     const root = document.createElement("div");
     root.className = "xinbao-color-panel";
-    root.style.cssText = "width:100%;height:100%;box-sizing:border-box;padding:8px;display:flex;flex-direction:column;gap:8px;color:#ddd;font:13px sans-serif";
+    root.style.cssText = "width:100%;box-sizing:border-box;padding:4px 8px;display:flex;flex-direction:column;gap:6px;color:#ddd;font:13px sans-serif";
     const toggleLabel = document.createElement("label");
     toggleLabel.style.cssText = "display:flex;align-items:center;gap:8px;cursor:pointer";
     const toggle = document.createElement("input"); toggle.type = "checkbox";
@@ -28,30 +28,20 @@ function setupPanel(node) {
     picker.type = "color";
     picker.style.cssText = "width:64px;height:36px;padding:0;border:none;background:none;cursor:pointer";
     label.append(picker); root.append(label);
-    const swatch = document.createElement("button");
-    swatch.type = "button";
-    swatch.style.cssText = "width:100%;flex:1;min-height:90px;border:1px solid #666;border-radius:6px;cursor:pointer";
-    swatch.title = "点击选择填充色";
-    root.append(swatch);
-    const status = document.createElement("div"); root.append(status);
     const refresh = () => {
         const isTransparent = !!transparent?.value;
         toggle.checked = isTransparent;
-        picker.disabled = swatch.disabled = color.disabled = isTransparent;
+        picker.disabled = color.disabled = isTransparent;
         label.style.opacity = isTransparent ? "0.4" : "1";
         if (isTransparent) {
-            swatch.style.background = "repeating-conic-gradient(#999 0% 25%, #ddd 0% 50%) 0 0 / 20px 20px";
-            swatch.title = "全透明背景；连接保存图像输出 PNG";
-            status.textContent = "透明 RGBA · 填充色已停用 · 保存为 PNG";
+            root.title = "透明 RGBA · 填充色已停用 · 保存为 PNG";
             return;
         }
-        swatch.style.backgroundImage = "none";
-        swatch.title = "点击选择填充色";
         let value = String(color.value).trim().replace(/^#/, "");
         if (/^[0-9a-f]{3}$/i.test(value)) value = [...value].map(c => c+c).join("");
         const valid = /^[0-9a-f]{6}$/i.test(value);
-        if (valid) { picker.value = "#"+value; swatch.style.backgroundColor = "#"+value; }
-        status.textContent = valid ? `填充色 #${value.toUpperCase()}` : "请输入 #RGB 或 #RRGGBB 色号";
+        if (valid) picker.value = "#"+value;
+        root.title = valid ? "" : "请输入 #RGB 或 #RRGGBB 色号";
     };
     toggle.addEventListener("change", () => {
         if (!transparent) return;
@@ -62,7 +52,6 @@ function setupPanel(node) {
         color.value = picker.value.toUpperCase();
         color.callback?.(color.value); refresh(); node.graph?.setDirtyCanvas?.(true, true);
     });
-    swatch.addEventListener("click", () => picker.click());
     for (const event of ["pointerdown", "click", "keydown"]) root.addEventListener(event, e => e.stopPropagation());
     const callback = color.callback;
     color.callback = function () { callback?.apply(this, arguments); refresh(); };
@@ -70,8 +59,30 @@ function setupPanel(node) {
         const transparentCallback = transparent.callback;
         transparent.callback = function () { transparentCallback?.apply(this, arguments); refresh(); };
     }
-    node.addDOMWidget("xinbao_color_picker", "div", root, {serialize:false, hideOnZoom:false, getMinHeight:()=>215});
-    node.setSize([360, 400]);
+    for (const name of ["width", "height", "color", "transparent_background"]) {
+        const widget = node.widgets.find((item) => item.name === name);
+        if (!widget) continue;
+        const original = widget.callback;
+        widget.callback = function () {
+            const result = original?.apply(this, arguments);
+            for (const target of node.graph?._nodes || []) {
+                if (!target.__xinbaoPintuSync) continue;
+                const backgroundLink = node.graph.links?.[target.inputs?.[0]?.link];
+                if (backgroundLink?.origin_id === node.id) void target.__xinbaoPintuSync();
+            }
+            return result;
+        };
+    }
+    node.addDOMWidget("xinbao_color_picker", "div", root, {serialize:false, hideOnZoom:false, getMinHeight:()=>72, getMaxHeight:()=>72});
+    const compact = () => node.setSize([Math.max(360, node.size?.[0] || 360), node.computeSize()[1]]);
+    compact();
+    const originalConfigure = node.onConfigure;
+    node.onConfigure = function () {
+        const result = originalConfigure?.apply(this, arguments);
+        refresh();
+        compact();
+        return result;
+    };
     node.__xinbaoColorPanel = {refresh};
     refresh();
 }

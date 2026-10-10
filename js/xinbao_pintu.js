@@ -1,7 +1,7 @@
 import { app } from "../../scripts/app.js";
 
 const NODE_CLASS = "XinbaoPintu";
-const DEFAULT_STATE = { x: 0.5, y: 0.5, scale: 0.35, rotation: 0 };
+const DEFAULT_STATE = { x: 0.5, y: 0.5, scale: 1, rotation: 0, auto_fit: true };
 const MIN_SCALE = 0.008;
 const MAX_SCALE = 8;
 
@@ -22,6 +22,8 @@ function parseState(raw) {
             y: Number.isFinite(+data.y) ? +data.y : DEFAULT_STATE.y,
             scale: clamp(Number.isFinite(+data.scale) ? +data.scale : DEFAULT_STATE.scale, MIN_SCALE, MAX_SCALE),
             rotation: Number.isFinite(+data.rotation) ? +data.rotation : DEFAULT_STATE.rotation,
+            auto_fit: data.auto_fit ?? !("scale" in data),
+            user_edited: Boolean(data.user_edited),
         };
     } catch {
         return { ...DEFAULT_STATE };
@@ -35,6 +37,13 @@ function setWidgetValue(node, widget, value) {
         widget.callback(value, app.canvas, node, app.canvas?.graph_mouse);
     }
     node.graph?.setDirtyCanvas?.(true, true);
+}
+
+function isLegacyDefaultState(raw, state, fitScale, locked) {
+    if (locked || !raw || state.user_edited) return false;
+    if (state.x !== 0.5 || state.y !== 0.5 || state.rotation !== 0) return false;
+    const oldFit = Math.max(0.03, 0.42 * fitScale);
+    return [0.35, oldFit].some((value) => Math.abs(state.scale - value) < 0.0000005);
 }
 
 function hideWidget(widget) {
@@ -95,6 +104,18 @@ function refToUrl(ref) {
 
 function loadBrowserImageFromRef(ref) {
     return new Promise((resolve, reject) => {
+        if (ref?.kind === "xinbao_color") {
+            const canvas = document.createElement("canvas");
+            canvas.width = canvas.naturalWidth = ref.width;
+            canvas.height = canvas.naturalHeight = ref.height;
+            if (!ref.transparent) {
+                const ctx = canvas.getContext("2d");
+                ctx.fillStyle = ref.color;
+                ctx.fillRect(0, 0, ref.width, ref.height);
+            }
+            resolve(canvas);
+            return;
+        }
         if (!ref?.filename) {
             resolve(null);
             return;
@@ -131,6 +152,28 @@ function getOriginNode(node, inputIndex) {
 
 function extractRefFromUpstreamNode(originNode) {
     if (!originNode) return null;
+    if ((originNode.comfyClass || originNode.type) === "XinbaoColorPanel") {
+        const value = (name) => {
+            const inputIndex = originNode.inputs?.findIndex((input) => input.name === name) ?? -1;
+            if (inputIndex >= 0 && originNode.inputs[inputIndex].link != null) {
+                const upstream = getOriginNode(originNode, inputIndex);
+                const link = originNode.graph.links[originNode.inputs[inputIndex].link];
+                const output = upstream?.getOutputData?.(link.origin_slot);
+                if (output != null) return output;
+                if ((upstream?.comfyClass || upstream?.type) === "PrimitiveNode") return upstream.widgets?.[0]?.value;
+                return null;
+            }
+            return originNode.widgets?.find((widget) => widget.name === name)?.value;
+        };
+        const width = Number(value("width"));
+        const height = Number(value("height"));
+        const transparent = Boolean(value("transparent_background"));
+        const color = String(value("color") || "").trim().replace(/^#/, "");
+        if (width > 0 && height > 0 && (transparent || /^(?:[a-f0-9]{3}|[a-f0-9]{6})$/i.test(color))) {
+            return { kind: "xinbao_color", width, height, color: `#${color}`, transparent };
+        }
+        return null;
+    }
     const preview = originNode.imgs?.[0];
     const previewSrc = typeof preview === "string" ? preview : preview?.src;
     const previewRef = parseViewRefFromUrl(previewSrc);
@@ -205,6 +248,7 @@ function setupEditor(node) {
     let overlayGeometry = null;
     let interaction = null;
     let pendingRedraw = false;
+    let syncVersion = 0;
     let paintCanvas = null;
     let cursorPoint = null;
     let paintCtx = null;
@@ -276,6 +320,8 @@ function setupEditor(node) {
             y: +state.y.toFixed(7),
             scale: +state.scale.toFixed(7),
             rotation: +state.rotation.toFixed(4),
+            auto_fit: false,
+            user_edited: true,
         }));
     }
 
@@ -336,9 +382,8 @@ function setupEditor(node) {
     function fitScale() {
         if (!backgroundImage || !overlayImage) return DEFAULT_STATE.scale;
         const ratio = overlayImage.naturalHeight / overlayImage.naturalWidth;
-        const bgRatio = viewRect.h / viewRect.w;
-        const candidate = Math.min(0.42, 0.42 * (bgRatio / Math.max(0.0001, ratio)));
-        return clamp(candidate, 0.03, getMaxScaleForRotation(0));
+        const bgRatio = backgroundImage.naturalHeight / backgroundImage.naturalWidth;
+        return Math.min(1, bgRatio / ratio);
     }
 
     let editorMinHeight = 680;
@@ -800,14 +845,15 @@ function setupEditor(node) {
         scheduleDraw();
     }, { passive: false });
 
-    async function syncFromInputs(forceReset = false) {
+    async function syncFromInputs(forceReset = false, executed = null) {
+        const version = ++syncVersion;
         state = parseState(stateWidget?.value);
         locked = Boolean(lockWidget?.value);
 
         const bgOrigin = getOriginNode(node, 0);
         const productOrigin = getOriginNode(node, 1);
-        const bgRef = extractRefFromUpstreamNode(bgOrigin);
-        const productRef = extractRefFromUpstreamNode(productOrigin);
+        const bgRef = executed?.background || extractRefFromUpstreamNode(bgOrigin);
+        const productRef = executed?.product || extractRefFromUpstreamNode(productOrigin);
 
         if (!bgRef) {
             backgroundImage = null;
@@ -832,17 +878,25 @@ function setupEditor(node) {
             const productChanged = !!productRefJson && productRefJson !== currentProductSignature;
 
             if (bgRefJson && bgRefJson !== loadedBgRefJson) {
-                backgroundImage = await loadBrowserImageFromRef(bgRef);
+                const loaded = await loadBrowserImageFromRef(bgRef);
+                if (version !== syncVersion) return;
+                backgroundImage = loaded;
                 loadedBgRefJson = bgRefJson;
-                currentBgSignature = bgRefJson;
-                setWidgetValue(node, bgRefWidget, bgRefJson);
+                if (!executed) {
+                    currentBgSignature = bgRefJson;
+                    setWidgetValue(node, bgRefWidget, bgRefJson);
+                }
             }
             if (productRefJson && productRefJson !== loadedProductRefJson) {
-                overlayImage = await loadBrowserImageFromRef(productRef);
+                const loaded = await loadBrowserImageFromRef(productRef);
+                if (version !== syncVersion) return;
+                overlayImage = loaded;
                 overlayHasTransparentPixels = detectTransparentPixels(overlayImage);
                 loadedProductRefJson = productRefJson;
-                currentProductSignature = productRefJson;
-                setWidgetValue(node, productRefWidget, productRefJson);
+                if (!executed) {
+                    currentProductSignature = productRefJson;
+                    setWidgetValue(node, productRefWidget, productRefJson);
+                }
             }
 
             if (backgroundImage) {
@@ -853,11 +907,14 @@ function setupEditor(node) {
             updateLockUI();
             updateModeUI();
             layoutStageFromBackground();
-            if (backgroundImage && overlayImage) {
-                if (bgChanged || productChanged || forceReset) {
-                    state = { x: 0.5, y: 0.5, scale: DEFAULT_STATE.scale, rotation: 0 };
-                    requestAnimationFrame(() => resetTransform());
-                }
+            if (executed?.transform) {
+                state = parseState(JSON.stringify(executed.transform));
+                setWidgetValue(node, stateWidget, JSON.stringify(state));
+            } else if (backgroundImage && overlayImage && !locked &&
+                       (bgChanged || productChanged || forceReset || state.auto_fit ||
+                        isLegacyDefaultState(stateWidget?.value, state, fitScale(), locked))) {
+                state = { x: 0.5, y: 0.5, scale: fitScale(), rotation: 0, auto_fit: true };
+                setWidgetValue(node, stateWidget, JSON.stringify(state));
             }
             setStatus();
             scheduleDraw();
@@ -945,6 +1002,12 @@ function setupEditor(node) {
     window.addEventListener("resize", syncDomLayout);
 
     node.__xinbaoPintuSync = syncFromInputs;
+    const originalExecuted = node.onExecuted;
+    node.onExecuted = function (message) {
+        const result = originalExecuted?.apply(this, arguments);
+        if (message?.xinbao_pintu?.[0]) void syncFromInputs(false, message.xinbao_pintu[0]);
+        return result;
+    };
     setTimeout(syncFromInputs, 0);
 
     const originalConnectionsChange = node.onConnectionsChange;
@@ -956,6 +1019,7 @@ function setupEditor(node) {
 
     const originalRemoved = node.onRemoved;
     node.onRemoved = function () {
+        syncVersion += 1;
         layoutObserver.disconnect();
         cancelAnimationFrame(layoutFrame);
         window.removeEventListener("resize", syncDomLayout);
