@@ -24,6 +24,7 @@ spec.loader.exec_module(module)
 from xinbao_migration_tests.local_image_tools import XinbaoImageSplitter, XinbaoSmartGrid
 from xinbao_migration_tests.snippet_manager import SnippetManager
 from xinbao_migration_tests.xinbao_psd_tool import XinbaoBatchToPSD
+from xinbao_migration_tests.xiaohongshu_options import XiaohongshuOptions
 
 
 MIGRATED_IDS = {
@@ -41,6 +42,22 @@ class MigratedNodeTests(unittest.TestCase):
     def test_registration_boundary(self):
         self.assertTrue(MIGRATED_IDS.issubset(module.NODE_CLASS_MAPPINGS))
         self.assertNotIn("LayerMask: MaskBoundingBoxAligned", module.NODE_CLASS_MAPPINGS)
+        self.assertIn("XiaohongshuOptions", module.NODE_CLASS_MAPPINGS)
+        self.assertEqual(
+            module.NODE_DISPLAY_NAME_MAPPINGS["XiaohongshuOptions"],
+            "心宝♥小红书选项",
+        )
+
+    def test_xiaohongshu_options(self):
+        node = XiaohongshuOptions()
+        street = node.generate("小红书街拍裂变", "9:16", 8, "", "稍作改变", "夜景")
+        self.assertEqual(street[0], "生成8屏图片，强制要求：【夜景】")
+        self.assertEqual(street[1:3], ("9:16", "xhs-json"))
+
+        jewelry = node.generate("小红书首饰佩戴", "1:1", 4, "项链", "完全一致", "")
+        self.assertIn("生成4屏图片，产品为项链", jewelry[0])
+        self.assertEqual(jewelry[1:3], ("1:1", "xhszb-json"))
+        self.assertIn("必须保持人物五官特征脸型发型的一致性", jewelry[3])
 
     def test_smart_grid_and_splitter(self):
         first = torch.ones((1, 80, 128, 3), dtype=torch.float32)
