@@ -1,6 +1,6 @@
 __pycache__/
 *.py[cod]
-!xinbao_lora_loader.cp312-win_amd64.pyd
+!xinbao_lora_loader.pyd
 xinbao_lora_loader.py
 *.pyx
 build/

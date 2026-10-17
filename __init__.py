@@ -1,5 +1,7 @@
 import importlib.util
 import logging
+import sys
+from pathlib import Path
 
 from .color_panel import (
     NODE_CLASS_MAPPINGS as COLOR_NODE_CLASS_MAPPINGS,
@@ -33,15 +35,21 @@ from .text_join import (
     NODE_CLASS_MAPPINGS as TEXT_JOIN_NODE_CLASS_MAPPINGS,
     NODE_DISPLAY_NAME_MAPPINGS as TEXT_JOIN_NODE_DISPLAY_NAME_MAPPINGS,
 )
-if importlib.util.find_spec(f"{__name__}.xinbao_lora_loader") is not None:
-    from .xinbao_lora_loader import (
-        NODE_CLASS_MAPPINGS as XINBAO_LORA_NODE_CLASS_MAPPINGS,
-        NODE_DISPLAY_NAME_MAPPINGS as XINBAO_LORA_NODE_DISPLAY_NAME_MAPPINGS,
+XINBAO_LORA_NODE_CLASS_MAPPINGS = {}
+XINBAO_LORA_NODE_DISPLAY_NAME_MAPPINGS = {}
+_lora_module_name = f"{__name__}.xinbao_lora_loader"
+try:
+    _lora_spec = importlib.util.spec_from_file_location(
+        _lora_module_name, Path(__file__).with_name("xinbao_lora_loader.pyd")
     )
-else:
-    XINBAO_LORA_NODE_CLASS_MAPPINGS = {}
-    XINBAO_LORA_NODE_DISPLAY_NAME_MAPPINGS = {}
-    logging.warning("[心宝节点组] LoRA 加载当前支持 Windows x64 / Python 3.12，已跳过此节点，其余功能正常加载。")
+    _lora_module = importlib.util.module_from_spec(_lora_spec)
+    sys.modules[_lora_module_name] = _lora_module
+    _lora_spec.loader.exec_module(_lora_module)
+    XINBAO_LORA_NODE_CLASS_MAPPINGS = _lora_module.NODE_CLASS_MAPPINGS
+    XINBAO_LORA_NODE_DISPLAY_NAME_MAPPINGS = _lora_module.NODE_DISPLAY_NAME_MAPPINGS
+except Exception as exc:
+    sys.modules.pop(_lora_module_name, None)
+    logging.warning("[心宝节点组] LoRA 模块未加载：%s", exc)
 
 from .number_slider import (
     NODE_CLASS_MAPPINGS as SLIDER_NODE_CLASS_MAPPINGS,
