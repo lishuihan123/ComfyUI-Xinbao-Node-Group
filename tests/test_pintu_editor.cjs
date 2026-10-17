@@ -5,14 +5,14 @@ const vm = require("node:vm");
 const { test } = require("node:test");
 const source = fs.readFileSync(path.join(__dirname, "../js/xinbao_pintu.js"), "utf8");
 
-function editor() {
+function editor({ withProduct = true } = {}) {
     const fillCalls = [];
     const panel = { comfyClass: "XinbaoColorPanel", widgets: [
         { name: "width", value: 1368 }, { name: "height", value: 2048 },
         { name: "color", value: "#ffffff" }, { name: "transparent_background", value: false },
     ] };
     const product = { widgets: [{ name: "image", value: "product.png" }] };
-    const graph = { links: { 1: { origin_id: 1 }, 2: { origin_id: 2 } },
+    const graph = { links: withProduct ? { 1: { origin_id: 1 }, 2: { origin_id: 2 } } : { 1: { origin_id: 1 } },
         getNodeById: (id) => id === 1 ? panel : product, setDirtyCanvas() {} };
     const context = vm.createContext({
         console, URL, URLSearchParams, app: {}, window: { location: { href: "http://localhost/" } },
@@ -21,7 +21,7 @@ function editor() {
             naturalWidth = 531; naturalHeight = 575;
             set src(value) { this.onload(); }
         },
-        node: { inputs: [{ link: 1 }, { link: 2 }], graph },
+        node: { inputs: [{ link: 1 }, { link: withProduct ? 2 : null }], graph },
         stateWidget: { value: '{"x":0.5,"y":0.5,"scale":1,"rotation":0,"auto_fit":true}' },
         lockWidget: { value: false }, bgRefWidget: { value: "" }, productRefWidget: { value: "" },
         loadedBgRefJson: "", loadedProductRefJson: "", currentBgSignature: "", currentProductSignature: "",
@@ -52,6 +52,53 @@ test("transparent color panel is not painted opaque", async () => {
     await context.syncFromInputs();
     assert.equal(fillCalls.length, 0);
     assert.equal(JSON.parse(context.bgRefWidget.value).transparent, true);
+});
+
+test("background-only input loads without a product preview", async () => {
+    const { context } = editor({ withProduct: false });
+    await context.syncFromInputs();
+    assert.equal(context.backgroundImage.naturalWidth, 1368);
+    assert.equal(context.overlayImage, null);
+    assert.equal(context.productRefWidget.value, "");
+});
+
+for (const mode of [2, 4]) {
+    test(`mode ${mode} clears the product and rejects stale execution previews`, async () => {
+        const { context, product } = editor();
+        await context.syncFromInputs();
+        assert.ok(context.overlayImage);
+        product.mode = mode;
+        await context.syncFromInputs(false, { product: { filename: "cached.png", type: "temp" } });
+        assert.equal(context.overlayImage, null);
+        assert.equal(context.productRefWidget.value, "");
+        assert.equal(context.loadedProductRefJson, "");
+        assert.ok(context.backgroundImage);
+        product.mode = 0;
+        await context.syncFromInputs();
+        assert.ok(context.overlayImage);
+    });
+}
+
+test("a disabled image ancestor blocks an active preview node's cached image", async () => {
+    const { context, panel, product } = editor();
+    product.inputs = [{ type: "IMAGE", link: 1 }];
+    product.graph = context.node.graph;
+    product.imgs = [{ src: "http://localhost/view?filename=cached.png&type=temp" }];
+    panel.mode = 4;
+    await context.syncFromInputs();
+    assert.equal(context.overlayImage, null);
+    assert.equal(context.backgroundImage, null);
+});
+
+test("disabling the composition node clears both images", async () => {
+    const { context } = editor();
+    await context.syncFromInputs();
+    context.node.mode = 2;
+    await context.syncFromInputs();
+    assert.equal(context.backgroundImage, null);
+    assert.equal(context.overlayImage, null);
+    assert.equal(context.bgRefWidget.value, "");
+    assert.equal(context.productRefWidget.value, "");
 });
 
 test("restoring the same inputs preserves manual placement", async () => {

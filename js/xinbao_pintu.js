@@ -150,8 +150,19 @@ function getOriginNode(node, inputIndex) {
     return node.graph?.getNodeById?.(link.origin_id) || null;
 }
 
+function hasDisabledImageSource(node, visited = new Set()) {
+    if (!node || visited.has(node)) return false;
+    visited.add(node);
+    // Both muted and bypassed nodes must not supply their old cached preview.
+    if (node.mode === 2 || node.mode === 4) return true;
+    return (node.inputs || []).some((input, index) =>
+        ["IMAGE", "MASK", "*"].includes(input.type) &&
+        hasDisabledImageSource(getOriginNode(node, index), visited)
+    );
+}
+
 function extractRefFromUpstreamNode(originNode) {
-    if (!originNode) return null;
+    if (!originNode || hasDisabledImageSource(originNode)) return null;
     if ((originNode.comfyClass || originNode.type) === "XinbaoColorPanel") {
         const value = (name) => {
             const inputIndex = originNode.inputs?.findIndex((input) => input.name === name) ?? -1;
@@ -614,22 +625,17 @@ function setupEditor(node) {
 
         sctx.drawImage(backgroundImage, viewRect.x, viewRect.y, viewRect.w, viewRect.h);
 
-        if (!overlayImage) {
-            ctx.drawImage(scene, 0, 0);
-            drawPlaceholder("等待产品 IMAGE 输入");
-            overlayGeometry = null;
-            return;
-        }
-
-        overlayGeometry = geometry();
-        const g = overlayGeometry;
         drawPreviewPaint(sctx);
-        drawPreviewOutline(sctx, g);
-        sctx.save();
-        sctx.translate(g.cx, g.cy);
-        sctx.rotate(g.angle);
-        sctx.drawImage(overlayImage, -g.w / 2, -g.h / 2, g.w, g.h);
-        sctx.restore();
+        overlayGeometry = overlayImage ? geometry() : null;
+        const g = overlayGeometry;
+        if (g) {
+            drawPreviewOutline(sctx, g);
+            sctx.save();
+            sctx.translate(g.cx, g.cy);
+            sctx.rotate(g.angle);
+            sctx.drawImage(overlayImage, -g.w / 2, -g.h / 2, g.w, g.h);
+            sctx.restore();
+        }
         ctx.drawImage(scene, 0, 0);
 
         if (!locked && (editorMode === "brush" || editorMode === "eraser") && cursorPoint) {
@@ -644,7 +650,7 @@ function setupEditor(node) {
             ctx.restore();
         }
 
-        if (!locked && editorMode === "move") {
+        if (!locked && editorMode === "move" && g) {
             ctx.save();
             ctx.strokeStyle = "#35d4ff";
             ctx.fillStyle = "#ffffff";
@@ -754,7 +760,7 @@ function setupEditor(node) {
     }
 
     canvas.addEventListener("pointerdown", (event) => {
-        if (locked || !overlayGeometry) return;
+        if (locked || !backgroundImage) return;
         const point = canvasPoint(event);
         cursorPoint = point;
 
@@ -852,8 +858,11 @@ function setupEditor(node) {
 
         const bgOrigin = getOriginNode(node, 0);
         const productOrigin = getOriginNode(node, 1);
-        const bgRef = executed?.background || extractRefFromUpstreamNode(bgOrigin);
-        const productRef = executed?.product || extractRefFromUpstreamNode(productOrigin);
+        const editorDisabled = node.mode === 2 || node.mode === 4;
+        const bgRef = editorDisabled || hasDisabledImageSource(bgOrigin)
+            ? null : executed?.background || extractRefFromUpstreamNode(bgOrigin);
+        const productRef = editorDisabled || hasDisabledImageSource(productOrigin)
+            ? null : executed?.product || extractRefFromUpstreamNode(productOrigin);
 
         if (!bgRef) {
             backgroundImage = null;
@@ -931,7 +940,7 @@ function setupEditor(node) {
     });
     lockButton.addEventListener("click", (event) => {
         event.stopPropagation();
-        if (!backgroundImage || !overlayImage) return;
+        if (!backgroundImage) return;
         locked = !locked;
         updateLockUI();
         updateModeUI();
@@ -1002,6 +1011,22 @@ function setupEditor(node) {
     window.addEventListener("resize", syncDomLayout);
 
     node.__xinbaoPintuSync = syncFromInputs;
+    let sourceEvents = null;
+    const onSourceModeChanged = (event) => {
+        if (event.detail.property === "mode") void syncFromInputs();
+    };
+    const watchSourceModes = () => {
+        sourceEvents?.removeEventListener("node:property:changed", onSourceModeChanged);
+        sourceEvents = node.graph?.events;
+        sourceEvents?.addEventListener("node:property:changed", onSourceModeChanged);
+    };
+    const originalAdded = node.onAdded;
+    node.onAdded = function () {
+        const result = originalAdded?.apply(this, arguments);
+        watchSourceModes();
+        return result;
+    };
+    watchSourceModes();
     const originalExecuted = node.onExecuted;
     node.onExecuted = function (message) {
         const result = originalExecuted?.apply(this, arguments);
@@ -1020,6 +1045,7 @@ function setupEditor(node) {
     const originalRemoved = node.onRemoved;
     node.onRemoved = function () {
         syncVersion += 1;
+        sourceEvents?.removeEventListener("node:property:changed", onSourceModeChanged);
         layoutObserver.disconnect();
         cancelAnimationFrame(layoutFrame);
         window.removeEventListener("resize", syncDomLayout);

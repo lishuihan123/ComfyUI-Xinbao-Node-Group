@@ -254,7 +254,6 @@ class XinbaoPintu:
         return {
             "required": {
                 "background": ("IMAGE", {"tooltip": "背景图。最终输出尺寸完全跟随这张图。"}),
-                "product": ("IMAGE", {"tooltip": "产品图。会始终叠放在背景图上方。"}),
                 "outline_size": (
                     "INT",
                     {
@@ -316,7 +315,10 @@ class XinbaoPintu:
                         "tooltip": "前端自动保存的手动画笔图层，仅影响最终拼合图，不影响遮罩。",
                     },
                 ),
-            }
+            },
+            "optional": {
+                "product": ("IMAGE", {"tooltip": "可选产品图。连接后会始终叠放在背景图上方。"}),
+            },
         }
 
     RETURN_TYPES = ("IMAGE", "MASK")
@@ -324,61 +326,33 @@ class XinbaoPintu:
     FUNCTION = "compose"
     CATEGORY = "心宝♥节点组"
     DESCRIPTION = (
-        "输入背景图与产品图，在节点画布中拖动、缩放、旋转并锁定。"
+        "输入背景图，可选连接产品图并在节点画布中拖动、缩放、旋转和锁定。"
         "背景图尺寸就是最终输出尺寸；产品不能超出背景范围。"
-        "可选白色外描边；遮罩始终只输出产品本体遮罩，不包含描边。"
+        "未连接产品图时直接输出背景图和全黑遮罩；遮罩不包含产品外描边。"
     )
 
     def compose(
         self,
         background: torch.Tensor,
-        product: torch.Tensor,
-        outline_size: int,
-        outline_opacity: int,
-        transform_json: str,
-        locked: bool,
-        background_ref: str,
-        product_ref: str,
-        paint_layer: str,
+        product: Optional[torch.Tensor] = None,
+        outline_size: int = 0,
+        outline_opacity: int = 50,
+        transform_json: str = "",
+        locked: bool = False,
+        background_ref: str = "",
+        product_ref: str = "",
+        paint_layer: str = "",
     ) -> dict:
         # The connected background is authoritative, including unexecuted color panels.
         background_rgba = _tensor_to_rgba(background)
-        product_rgba = _image_from_tensor_or_ref(product, product_ref)
+        product_rgba = _image_from_tensor_or_ref(product, product_ref) if product is not None else None
         transform = _parse_transform(transform_json)
         bg_w, bg_h = background_rgba.size
-        ov_w, ov_h = product_rgba.size
-        if bg_w < 1 or bg_h < 1 or ov_w < 1 or ov_h < 1:
+        if bg_w < 1 or bg_h < 1:
             raise ValueError("图片尺寸无效。")
 
-        fit_scale = _max_scale_to_fit(bg_w, bg_h, ov_w, ov_h, 0)
-        auto_fit = transform.pop("auto_fit") or _is_legacy_default_transform(
-            transform_json, transform, fit_scale, locked
-        )
-        user_edited = transform.pop("user_edited")
-        if auto_fit:
-            transform = {"x": 0.5, "y": 0.5, "rotation": 0.0,
-                         "scale": fit_scale}
-
-        transform = _clamp_transform(bg_w, bg_h, ov_w, ov_h, transform)
-
-        target_w = max(1, int(round(bg_w * transform["scale"])))
-        target_h = max(1, int(round(target_w * ov_h / ov_w)))
-        resized = product_rgba.resize((target_w, target_h), Image.Resampling.LANCZOS)
-
-        rotated = resized.rotate(
-            -transform["rotation"],
-            resample=Image.Resampling.BICUBIC,
-            expand=True,
-        )
-        alpha = rotated.getchannel("A")
-
-        center_x = int(round(bg_w * transform["x"]))
-        center_y = int(round(bg_h * transform["y"]))
-        left = center_x - rotated.width // 2
-        top = center_y - rotated.height // 2
-        # Keep output behavior consistent with the editor preview:
-        # the product center may move anywhere inside the frame, so up to
-        # half of the product can extend outside the canvas.
+        auto_fit = transform.pop("auto_fit")
+        user_edited = transform.get("user_edited", False)
 
         composite = background_rgba.copy()
 
@@ -392,20 +366,50 @@ class XinbaoPintu:
                 paint_rgba = Image.fromarray(arr, mode="RGBA")
             composite.alpha_composite(paint_rgba, dest=(0, 0))
 
-        outline_layer, outline_dx, outline_dy = _make_outline_rgba(alpha, outline_size, outline_opacity)
-        if outline_layer is not None:
-            composite.alpha_composite(outline_layer, dest=(left + outline_dx, top + outline_dy))
-        composite.alpha_composite(rotated, dest=(left, top))
-
         mask = Image.new("L", (bg_w, bg_h), 0)
-        mask.paste(alpha, (left, top))
+        preview = {
+            "background": _save_editor_preview(background_rgba, "background"),
+        }
+
+        if product_rgba is not None:
+            ov_w, ov_h = product_rgba.size
+            if ov_w < 1 or ov_h < 1:
+                raise ValueError("图片尺寸无效。")
+
+            fit_scale = _max_scale_to_fit(bg_w, bg_h, ov_w, ov_h, 0)
+            auto_fit = auto_fit or _is_legacy_default_transform(
+                transform_json, transform, fit_scale, locked
+            )
+            if auto_fit:
+                transform = {"x": 0.5, "y": 0.5, "rotation": 0.0, "scale": fit_scale}
+
+            transform = _clamp_transform(bg_w, bg_h, ov_w, ov_h, transform)
+            target_w = max(1, int(round(bg_w * transform["scale"])))
+            target_h = max(1, int(round(target_w * ov_h / ov_w)))
+            resized = product_rgba.resize((target_w, target_h), Image.Resampling.LANCZOS)
+            rotated = resized.rotate(
+                -transform["rotation"],
+                resample=Image.Resampling.BICUBIC,
+                expand=True,
+            )
+            alpha = rotated.getchannel("A")
+            center_x = int(round(bg_w * transform["x"]))
+            center_y = int(round(bg_h * transform["y"]))
+            left = center_x - rotated.width // 2
+            top = center_y - rotated.height // 2
+
+            outline_layer, outline_dx, outline_dy = _make_outline_rgba(alpha, outline_size, outline_opacity)
+            if outline_layer is not None:
+                composite.alpha_composite(outline_layer, dest=(left + outline_dx, top + outline_dy))
+            composite.alpha_composite(rotated, dest=(left, top))
+            mask.paste(alpha, (left, top))
+            preview["product"] = _save_editor_preview(product_rgba, "product")
+
+        transform.pop("user_edited", None)
+        preview["transform"] = {**transform, "auto_fit": auto_fit, "user_edited": user_edited}
 
         return {
-            "ui": {"xinbao_pintu": [{
-                "background": _save_editor_preview(background_rgba, "background"),
-                "product": _save_editor_preview(product_rgba, "product"),
-                "transform": {**transform, "auto_fit": auto_fit, "user_edited": user_edited},
-            }]},
+            "ui": {"xinbao_pintu": [preview]},
             "result": (_pil_to_image_tensor(composite), _pil_to_mask_tensor(mask)),
         }
 
@@ -413,14 +417,14 @@ class XinbaoPintu:
     def IS_CHANGED(
         cls,
         background: torch.Tensor,
-        product: torch.Tensor,
-        outline_size: int,
-        outline_opacity: int,
-        transform_json: str,
-        locked: bool,
-        background_ref: str,
-        product_ref: str,
-        paint_layer: str,
+        product: Optional[torch.Tensor] = None,
+        outline_size: int = 0,
+        outline_opacity: int = 50,
+        transform_json: str = "",
+        locked: bool = False,
+        background_ref: str = "",
+        product_ref: str = "",
+        paint_layer: str = "",
     ):
         parts = [
             str(tuple(background.shape)) if isinstance(background, torch.Tensor) else "background_missing",

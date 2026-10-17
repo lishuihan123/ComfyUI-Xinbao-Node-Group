@@ -47,6 +47,23 @@ class PintuAlphaTests(unittest.TestCase):
         torch.testing.assert_close(result[0, 16, 16], torch.full((3,), 128 / 255))
         self.assertAlmostEqual(mask[0, 16, 16].item(), 128 / 255)
 
+    def test_background_only_returns_background_and_empty_mask(self):
+        background = torch.zeros((1, 24, 32, 3))
+        background[..., 1] = 1
+        response = pintu.XinbaoPintu().compose(background)
+        result, mask = response["result"]
+        torch.testing.assert_close(result, background)
+        self.assertEqual(tuple(mask.shape), (1, 24, 32))
+        self.assertFalse(torch.any(mask))
+        preview = response["ui"]["xinbao_pintu"][0]
+        self.assertIn("background", preview)
+        self.assertNotIn("product", preview)
+
+    def test_product_input_is_optional(self):
+        input_types = pintu.XinbaoPintu.INPUT_TYPES()
+        self.assertNotIn("product", input_types["required"])
+        self.assertIn("product", input_types["optional"])
+
     def test_rotation_keeps_soft_edges(self):
         product = torch.zeros((1, 16, 16, 4)); product[:, 2:14, 2:14] = 1
         result, mask = self.compose(torch.zeros((1, 32, 32, 4)), product, rotation=23)
