@@ -23,3 +23,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Perspective preview
+
+The offline perspective preview bundles Three.js r169 and GLTFLoader under the MIT license; see `js/perspective_preview/vendor/THREE-LICENSE.txt`.
+
+The classical female bust was provided by Innerscene under CC0. A neutral plaster material is applied at runtime.
+
+Source: https://www.innerscene.com/tools/library/3d-parts/classical-female-bust-fd4546a4

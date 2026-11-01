@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>心宝❤透视调节</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#161d27;color:#edf2fa;font:14px system-ui,"Microsoft YaHei",sans-serif}main{padding:15px;max-width:740px;margin:auto}header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}h1{font-size:18px;margin:0}.tag{color:#a8b7cc;font-size:12px}.stage{height:270px;position:relative;background:linear-gradient(#ce8ea1 0 75%,#e9e3e4 75%);border:1px solid #ad7f92;border-radius:12px;overflow:hidden}.stage canvas{width:100%;height:100%;display:block}.badge{position:absolute;left:10px;top:9px;border-radius:5px;background:#131a24ad;padding:5px 8px;color:#dbe4f0;font-size:12px;pointer-events:none}.corner{position:absolute;right:10px;bottom:10px;color:#c8d5e5;font-size:12px;pointer-events:none}.loading{position:absolute;inset:0;display:grid;place-items:center;color:#c8d5e5;pointer-events:none}fieldset{border:0;margin:12px 0 0;padding:0}legend{margin-bottom:6px;color:#c4cfdd;font-size:12px}.row{display:flex;gap:6px}.row button{flex:1}button{font:inherit;cursor:pointer;color:#dce5f2;background:#273140;border:1px solid #435065;border-radius:7px;padding:8px 5px}button:hover{background:#364660}button[aria-pressed=true]{background:#316ce4;color:white;border-color:#70a4ff;box-shadow:0 0 0 1px #70a4ff inset}button:focus-visible{outline:2px solid #9cc0ff;outline-offset:2px}.dual{display:grid;grid-template-columns:1.45fr 1fr;gap:14px}.output{margin-top:14px;background:#0e1520;border:1px solid #3d4d65;padding:10px;border-radius:9px;line-height:1.65;min-height:65px;user-select:text}.foot{display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px}.foot button{font-size:12px;padding:5px 10px}.note{color:#adbcd1;font-size:11px;line-height:1.5;margin:7px 0 0;min-height:30px}.note.warn{color:#f2cc82}#error{color:#ffb6b6}.sign{font-size:10px;opacity:.8;display:block}button small{font-size:10px;display:block}
+html,body{overflow:hidden}
+</style>
+<main>
+ <header><h1>心宝❤透视调节</h1><span class="tag">场景旋转 · 石膏示意</span></header>
+ <div class="stage" id="stage"><div class="badge" id="view-label">右45° · 水平</div><div class="corner">固定中心 · 固定焦距</div><div id="loading" class="loading">正在加载石膏…</div></div>
+ <fieldset><legend>场景旋转　负数向左 / 正数向右</legend><div class="row" id="rotation">
+  <button data-value="-90">−90°<small>左侧</small></button><button data-value="-45">−45°<small>左斜侧</small></button><button data-value="0">0°<small>正面</small></button><button data-value="45">45°<small>右斜侧</small></button><button data-value="90">90°<small>右侧</small></button>
+ </div></fieldset>
+ <div class="dual">
+
+  <fieldset><legend>摄像机高度</legend><div class="row" id="height"><button data-value="低">低</button><button data-value="中">中</button><button data-value="高">高</button><button data-value="顶">顶</button></div></fieldset>
+  <fieldset><legend>摄像机距离</legend><div class="row" id="distance"><button data-value="中">中</button><button data-value="大">大<small>拉远</small></button></div></fieldset>
+ </div>
+ <div id="prompt" hidden></div>
+</main>
+<script type="module" src="./panel.mjs?v=marblewoman20261101"></script>
+</html>
