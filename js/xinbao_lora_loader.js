@@ -14,7 +14,10 @@ function setup(node) {
     if (!name || !strength) return;
     const stack = node.widgets.find(w => w.name === "lora_stack")
         ?? node.addWidget("text", "lora_stack", "[]", () => {}, {});
-    for (const widget of [stack]) {
+    if (stack.value == null || ["", "none", "null"].includes(String(stack.value).trim().toLowerCase())) {
+        stack.value = "[]";
+    }
+    for (const widget of [name, strength, stack]) {
         widget.hidden = true;
         widget.type = "xinbao_hidden";
         widget.computeSize = () => [0, -4];
@@ -66,7 +69,7 @@ function setup(node) {
         root.addEventListener(event, e => e.stopPropagation());
     }
 
-    const height = () => (rows.length - 1) * 54 + 58;
+    const height = () => rows.length * 54 + 58;
     const domWidget = node.addDOMWidget("xinbao_loras", "div", root, {
         serialize: false, hideOnZoom: false,
         getMinHeight: height, getMaxHeight: height,
@@ -81,23 +84,73 @@ function setup(node) {
         return node.inputs?.some(input =>
             (input.widget?.name === widgetName || input.name === widgetName) && input.link != null);
     }
-    function fillOptions(select, current, allowEmpty) {
-        select.replaceChildren();
+    let picker;
+    function openPicker(trigger, row, index) {
+        picker?.close();
+        const dialog = document.createElement("dialog");
+        picker = dialog;
+        dialog.setAttribute("aria-label", "选择 LoRA " + (index + 1));
+        dialog.style.cssText = "width:min(640px,85vw);max-height:75vh;padding:12px;background:#222;color:#ddd;border:1px solid #666;border-radius:8px;font:13px sans-serif";
+        const search = document.createElement("input");
+        search.type = "search";
+        search.placeholder = "搜索 LoRA 名称或文件夹…";
+        search.setAttribute("aria-label", "搜索 LoRA");
+        search.style.cssText = "box-sizing:border-box;width:100%;height:30px;background:#333;color:#eee;border:1px solid #777;padding:4px 8px";
+        const list = document.createElement("div");
+        list.style.cssText = "max-height:50vh;overflow:auto;margin:8px 0;display:flex;flex-direction:column;gap:3px";
         const values = name.options?.values;
         const names = typeof values === "function" ? values() : values ?? [];
         const choices = [...names];
-        if (current && !choices.includes(current)) choices.unshift(current);
-        if (allowEmpty || !current) choices.unshift("");
-        for (const value of choices) {
-            const option = document.createElement("option");
-            option.value = value;
-            option.textContent = value || "选择 LoRA";
-            select.append(option);
+        if (row.lora_name && !choices.includes(row.lora_name)) choices.unshift(row.lora_name);
+        function choose(value) {
+            row.lora_name = value;
+            trigger.textContent = value || "选择 LoRA ▾";
+            trigger.title = value || "选择 LoRA";
+            commit();
+            dialog.close();
         }
-        select.value = current;
-        select.title = current || "选择 LoRA";
+        function filter() {
+            list.replaceChildren();
+            const query = search.value.trim().toLowerCase();
+            for (const value of choices.filter(value => value.toLowerCase().includes(query))) {
+                const item = button(value, () => choose(value));
+                item.title = value;
+                item.style.cssText += ";flex:none;min-height:28px;text-align:left;padding:4px 8px;overflow-wrap:anywhere";
+                list.append(item);
+            }
+            if (!list.children.length) {
+                const empty = document.createElement("div");
+                empty.textContent = "没有匹配的 LoRA";
+                list.append(empty);
+            }
+        }
+        search.value = "";
+        search.addEventListener("input", filter);
+        search.addEventListener("keydown", event => {
+            if (event.isComposing) return;
+            const first = list.querySelector("button");
+            if (event.key === "ArrowDown") { event.preventDefault(); first?.focus(); }
+            if (event.key === "Enter") { event.preventDefault(); first?.click(); }
+        });
+        const controls = document.createElement("div");
+        controls.style.cssText = "display:flex;gap:8px;height:28px";
+        if (index > 0) controls.append(button("清空此项", () => choose("")));
+        controls.append(button("取消", () => dialog.close()));
+        dialog.append(search, list, controls);
+        dialog.addEventListener("close", () => {
+            dialog.remove();
+            if (picker === dialog) picker = null;
+            trigger.focus();
+        });
+        dialog.addEventListener("click", event => { if (event.target === dialog) dialog.close(); });
+        dialog.addEventListener("keydown", event => event.stopPropagation());
+        document.body.append(dialog);
+        filter();
+        dialog.showModal();
+        search.focus();
     }
     function refresh() {
+        picker?.close();
         let extra = [];
         root.title = "";
         try {
@@ -110,20 +163,13 @@ function setup(node) {
         rows = [{ lora_name: name.value || "", lora_strength: Number(strength.value ?? 1) }, ...extra];
         rowsElement.replaceChildren();
         rows.forEach((row, index) => {
-            if (index === 0) return; // Native widgets stay visible and convertible to input sockets.
             const line = document.createElement("div");
             line.style.cssText = "display:flex;flex-direction:column;gap:5px;height:49px";
-            const select = document.createElement("select");
+            const select = button(row.lora_name || "选择 LoRA ▾", () => openPicker(select, row, index));
             select.setAttribute("aria-label", "LoRA " + (index + 1));
-            select.style.cssText = "width:100%;min-width:0;height:24px;background:#222;color:#ddd;border:1px solid #555;border-radius:4px;font:inherit;text-overflow:ellipsis";
-            fillOptions(select, row.lora_name, index > 0);
+            select.title = row.lora_name || "选择 LoRA";
             select.disabled = index === 0 && linked("lora_name");
-            select.addEventListener("pointerdown", () => fillOptions(select, row.lora_name, index > 0));
-            select.addEventListener("change", () => {
-                row.lora_name = select.value;
-                select.title = select.value;
-                commit();
-            });
+            select.style.cssText = "flex:none;width:100%;min-width:0;height:24px;background:#222;color:#ddd;border:1px solid #555;border-radius:4px;font:inherit;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer";
             const slider = document.createElement("input");
             slider.type = "range";
             slider.min = "0";
@@ -171,6 +217,11 @@ function setup(node) {
             return result;
         };
     }
+    const onRemoved = node.onRemoved;
+    node.onRemoved = function () {
+        picker?.close();
+        return onRemoved?.apply(this, arguments);
+    };
     for (const widget of [name, strength, stack]) {
         const original = widget.callback;
         widget.callback = function () {
