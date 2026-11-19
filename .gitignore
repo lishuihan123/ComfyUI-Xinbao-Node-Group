@@ -9,3 +9,10 @@ snippets.toml
 *.log
 .idea/
 .vscode/
+
+_runtime/
+xinbao_lora_loader.c
+*.lib
+*.pdb
+*.exp
+*.obj

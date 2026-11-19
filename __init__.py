@@ -41,19 +41,17 @@ from .text_join import (
 )
 XINBAO_LORA_NODE_CLASS_MAPPINGS = {}
 XINBAO_LORA_NODE_DISPLAY_NAME_MAPPINGS = {}
+from .lora_runtime import load_lora_module, unavailable_lora_node
 _lora_module_name = f"{__name__}.xinbao_lora_loader"
 try:
-    _lora_spec = importlib.util.spec_from_file_location(
-        _lora_module_name, Path(__file__).with_name("xinbao_lora_loader.pyd")
-    )
-    _lora_module = importlib.util.module_from_spec(_lora_spec)
-    sys.modules[_lora_module_name] = _lora_module
-    _lora_spec.loader.exec_module(_lora_module)
+    _lora_module = load_lora_module(_lora_module_name)
     XINBAO_LORA_NODE_CLASS_MAPPINGS = _lora_module.NODE_CLASS_MAPPINGS
     XINBAO_LORA_NODE_DISPLAY_NAME_MAPPINGS = _lora_module.NODE_DISPLAY_NAME_MAPPINGS
 except Exception as exc:
     sys.modules.pop(_lora_module_name, None)
-    logging.warning("[心宝节点组] LoRA 模块未加载：%s", exc)
+    logging.warning("[心宝节点组] LoRA 运行组件未就绪：%s", exc)
+    XINBAO_LORA_NODE_CLASS_MAPPINGS = {"XinbaoLoraLoader": unavailable_lora_node(str(exc))}
+    XINBAO_LORA_NODE_DISPLAY_NAME_MAPPINGS = {"XinbaoLoraLoader": "心宝♥LoRA加载"}
 
 from .number_slider import (
     NODE_CLASS_MAPPINGS as SLIDER_NODE_CLASS_MAPPINGS,

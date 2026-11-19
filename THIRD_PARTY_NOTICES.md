@@ -31,3 +31,7 @@ The offline perspective preview bundles Three.js r169 and GLTFLoader under the M
 The classical female bust was provided by Innerscene under CC0. A neutral plaster material is applied at runtime.
 
 Source: https://www.innerscene.com/tools/library/3d-parts/classical-female-bust-fd4546a4
+
+## Bundled Windows runtime components
+
+The unmodified wheels under `runtime/wheels/` are obtained from PyPI: cryptography 50.0.2 (Apache-2.0 OR BSD-3-Clause), cffi 2.1.1 (MIT), and pycparser 2.23 (BSD-3-Clause). Each wheel retains its upstream license and notices in its `.dist-info` directory, including notices for bundled libraries. The manifest records each archive's SHA-256. These libraries remain covered by their original licenses.

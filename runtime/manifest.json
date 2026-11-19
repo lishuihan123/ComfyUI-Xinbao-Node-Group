@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "windows_x64": {
+    "cp310": [
+      {
+        "file": "cryptography-50.0.2-cp39-abi3-win_amd64.whl",
+        "sha256": "4e81d95e5bafc2d6e34e4bed780e53e4d5b9a2f928573428aa4d35fbec1eb0de"
+      },
+      {
+        "file": "cffi-2.1.1-cp310-cp310-win_amd64.whl",
+        "sha256": "a48d62ab9d6f4f98c983223a547af44be6ca3691074c31cecced6facd3ba2dc1"
+      },
+      {
+        "file": "pycparser-2.23-py3-none-any.whl",
+        "sha256": "e5c6e8d3fbad53479cab09ac03729e0a9faf2bee3db8208a550daf5af81a5934"
+      }
+    ],
+    "cp311": [
+      {
+        "file": "cryptography-50.0.2-cp311-abi3-win_amd64.whl",
+        "sha256": "7afa5a6602a9f29af1f3a2965f831bae7c9d5d597b7cbb716d41ab3b7d89879c"
+      },
+      {
+        "file": "cffi-2.1.1-cp311-cp311-win_amd64.whl",
+        "sha256": "42f6930c31dc7f50732c9ae793c2786c7b6b044195967bbdde40bb9be81c4cc0"
+      },
+      {
+        "file": "pycparser-2.23-py3-none-any.whl",
+        "sha256": "e5c6e8d3fbad53479cab09ac03729e0a9faf2bee3db8208a550daf5af81a5934"
+      }
+    ],
+    "cp312": [
+      {
+        "file": "cryptography-50.0.2-cp311-abi3-win_amd64.whl",
+        "sha256": "7afa5a6602a9f29af1f3a2965f831bae7c9d5d597b7cbb716d41ab3b7d89879c"
+      },
+      {
+        "file": "cffi-2.1.1-cp312-cp312-win_amd64.whl",
+        "sha256": "f53e442b08449d42821fa4a4fba000095af9f62742a500f978a9f557ec44339a"
+      },
+      {
+        "file": "pycparser-2.23-py3-none-any.whl",
+        "sha256": "e5c6e8d3fbad53479cab09ac03729e0a9faf2bee3db8208a550daf5af81a5934"
+      }
+    ],
+    "cp313": [
+      {
+        "file": "cryptography-50.0.2-cp311-abi3-win_amd64.whl",
+        "sha256": "7afa5a6602a9f29af1f3a2965f831bae7c9d5d597b7cbb716d41ab3b7d89879c"
+      },
+      {
+        "file": "cffi-2.1.1-cp313-cp313-win_amd64.whl",
+        "sha256": "1aa5645c30469b09530c4ebca77ebf8f17618293c58f8549cb1a543a50236e7d"
+      },
+      {
+        "file": "pycparser-2.23-py3-none-any.whl",
+        "sha256": "e5c6e8d3fbad53479cab09ac03729e0a9faf2bee3db8208a550daf5af81a5934"
+      }
+    ],
+    "cp314": [
+      {
+        "file": "cryptography-50.0.2-cp311-abi3-win_amd64.whl",
+        "sha256": "7afa5a6602a9f29af1f3a2965f831bae7c9d5d597b7cbb716d41ab3b7d89879c"
+      },
+      {
+        "file": "cffi-2.1.1-cp314-cp314-win_amd64.whl",
+        "sha256": "3222ba5d678f80a030e6afbcc33dc1ae5cb45facabb61cee2c7016b8432fde48"
+      },
+      {
+        "file": "pycparser-2.23-py3-none-any.whl",
+        "sha256": "e5c6e8d3fbad53479cab09ac03729e0a9faf2bee3db8208a550daf5af81a5934"
+      }
+    ]
+  }
+}
